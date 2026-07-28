@@ -1,0 +1,6 @@
+fastapi==0.120.3
+uvicorn==0.38.0
+openai==2.6.1
+python-dotenv==1.2.1
+python-multipart==0.0.20
+gTTS==2.5.4

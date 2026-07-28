@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INOUS.AI — Assistant éducatif</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="panneau-lateral">
+    <div class="entete-marque">
+      <span class="craie-point"></span>
+      <h1>INOUS<span class="point-final">.AI</span></h1>
+    </div>
+    <p class="sous-titre">Assistant éducatif</p>
+
+    <nav class="modes">
+      <button class="mode-btn actif" data-mode="chat">
+        <span class="mode-num">01</span> Discussion
+      </button>
+      <button class="mode-btn" data-mode="image">
+        <span class="mode-num">02</span> Analyser une image
+      </button>
+      <button class="mode-btn" data-mode="voix">
+        <span class="mode-num">03</span> Voix
+      </button>
+    </nav>
+
+    <button id="btn-effacer" class="bouton-fantome">Effacer la session</button>
+
+    <div class="statut" id="statut-api">
+      <span class="pastille"></span> <span id="statut-texte">Vérification…</span>
+    </div>
+  </aside>
+
+  <main class="zone-chat">
+
+    <div id="fil-conversation" class="fil-conversation">
+      <div class="message message-ia">
+        <div class="bulle">
+          Bonjour, je suis <strong>INOUS.AI</strong>. Pose-moi une question de cours,
+          envoie-moi une image à analyser, ou parle-moi directement au micro.
+        </div>
+      </div>
+    </div>
+
+    <div class="zone-image-active" id="zone-image-active" hidden>
+      <img id="apercu-image" alt="Aperçu de l'image">
+      <button id="retirer-image">✕</button>
+    </div>
+
+    <form id="formulaire-saisie" class="barre-saisie">
+      <label class="bouton-icone" title="Joindre une image">
+        <input type="file" id="entree-fichier" accept="image/*" hidden>
+        📎
+      </label>
+      <button type="button" id="bouton-micro" class="bouton-icone" title="Parler">🎙️</button>
+      <input
+        type="text"
+        id="entree-texte"
+        placeholder="Écris ta question ici…"
+        autocomplete="off"
+      >
+      <button type="submit" class="bouton-envoyer">Envoyer</button>
+    </form>
+
+  </main>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
