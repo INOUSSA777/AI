@@ -48,8 +48,13 @@ class PromptImage(BaseModel):
 
 @app.get("/api/sante")
 def sante():
-    """Vérifie que l'API répond et que la clé OpenAI est bien configurée."""
-    return {"statut": "ok", "cle_api_configuree": bool(os.getenv("OPENAI_API_KEY"))}
+    """Vérifie que l'API répond et que les clés nécessaires sont configurées."""
+    return {
+        "statut": "ok",
+        "cle_api_configuree": bool(os.getenv("GROQ_API_KEY")),
+        "cle_groq_configuree": bool(os.getenv("GROQ_API_KEY")),
+        "cle_openai_configuree": bool(os.getenv("OPENAI_API_KEY")),
+    }
 
 
 @app.post("/api/chat")

@@ -1,7 +1,14 @@
 """
 Service central de INOUS.AI : toute la logique d'appel au modèle d'IA
 passe par ce fichier. Le reste de l'app (routes FastAPI) ne parle jamais
-directement à l'API OpenAI, seulement à ce service.
+directement aux API IA, seulement à ce service.
+
+Deux fournisseurs sont utilisés :
+- Groq (gratuit) pour le chat texte et la transcription vocale (Whisper).
+- OpenAI (payant) pour l'analyse d'image et la génération d'image, deux
+  fonctions que Groq ne propose pas.
+Les deux exposent une API compatible avec le SDK "openai" : seule l'adresse
+(base_url) et la clé changent.
 """
 
 import base64
@@ -9,13 +16,18 @@ import os
 
 from openai import OpenAI
 
-# Le client lit automatiquement la variable d'environnement OPENAI_API_KEY.
-# Ne jamais écrire la clé en dur dans le code.
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Le client lit automatiquement la variable d'environnement associée.
+# Ne jamais écrire une clé en dur dans le code.
+client_groq = OpenAI(
+    api_key=os.getenv("GROQ_API_KEY"),
+    base_url="https://api.groq.com/openai/v1",
+)
+client_openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-MODEL_TEXTE = "gpt-4o-mini"
-MODEL_VISION = "gpt-4o-mini"  # même modèle, il gère aussi les images
-MODEL_IMAGE = "gpt-image-1"
+MODEL_TEXTE = "llama-3.3-70b-versatile"  # via Groq, gratuit
+MODEL_TRANSCRIPTION = "whisper-large-v3"  # via Groq, gratuit
+MODEL_VISION = "gpt-4o-mini"  # via OpenAI (Groq ne fait pas d'analyse d'image fiable)
+MODEL_IMAGE = "gpt-image-1"  # via OpenAI (Groq ne génère pas d'images)
 
 SYSTEM_PROMPT = (
     "Tu es INOUS.AI, un assistant éducatif sérieux et bienveillant. "
@@ -62,7 +74,7 @@ def chat_response(question: str, historique=None, langue: str = "fr") -> str:
         messages.extend(historique)
     messages.append({"role": "user", "content": question})
 
-    reponse = client.chat.completions.create(
+    reponse = client_groq.chat.completions.create(
         model=MODEL_TEXTE,
         messages=messages,
         temperature=0.7,
@@ -76,7 +88,7 @@ def generer_image(prompt: str) -> bytes:
     Génère une image à partir d'une description texte et renvoie
     les octets bruts de l'image (PNG).
     """
-    reponse = client.images.generate(
+    reponse = client_openai.images.generate(
         model=MODEL_IMAGE,
         prompt=prompt,
         size="1024x1024",
@@ -93,7 +105,7 @@ def analyser_image(image_bytes: bytes, question: str = "Décris cette image en d
     """
     image_b64 = base64.b64encode(image_bytes).decode("utf-8")
 
-    reponse = client.chat.completions.create(
+    reponse = client_openai.chat.completions.create(
         model=MODEL_VISION,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -122,8 +134,8 @@ def transcrire_audio(audio_bytes: bytes, nom_fichier: str = "audio.webm") -> str
     fichier_audio = io.BytesIO(audio_bytes)
     fichier_audio.name = nom_fichier  # l'API a besoin d'un nom avec extension
 
-    transcription = client.audio.transcriptions.create(
-        model="whisper-1",
+    transcription = client_groq.audio.transcriptions.create(
+        model=MODEL_TRANSCRIPTION,
         file=fichier_audio,
     )
     return transcription.text
