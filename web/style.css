@@ -36,6 +36,7 @@ body {
   display: grid;
   grid-template-columns: 260px 1fr;
   height: 100vh;
+  overflow: hidden;
 }
 
 /* ---------- panneau latéral ---------- */
@@ -45,6 +46,11 @@ body {
   padding: 28px 22px;
   display: flex;
   flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  align-self: start;
+  overflow-y: auto;
 }
 
 .entete-marque {
@@ -199,6 +205,9 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .fil-conversation {
@@ -337,6 +346,10 @@ body {
     padding: 14px 16px;
     border-right: none;
     border-bottom: 1px solid rgba(242,239,226,0.08);
+    height: auto;
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
   .sous-titre, .modes, .bouton-fantome, .statut { display: none; }
 }
