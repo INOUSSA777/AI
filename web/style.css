@@ -113,6 +113,56 @@ body {
 }
 .mode-btn.actif .mode-num { color: var(--accent); }
 
+.btn-audio-phrase {
+  all: unset;
+  cursor: pointer;
+  font-size: 0.78rem;
+  padding: 0 3px;
+  vertical-align: middle;
+  opacity: 0.75;
+}
+.btn-audio-phrase:hover { opacity: 1; }
+.btn-audio-phrase:disabled { opacity: 0.35; cursor: default; }
+
+.note-audio-indisponible {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--muet);
+  font-style: italic;
+}
+
+.bloc-langue {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(242,239,226,0.08);
+}
+
+.bloc-langue label {
+  display: block;
+  font-size: 0.72rem;
+  font-family: var(--police-utilitaire);
+  color: var(--muet);
+  margin-bottom: 8px;
+  letter-spacing: 0.02em;
+}
+
+.bloc-langue select {
+  width: 100%;
+  background: var(--surface);
+  color: var(--craie);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-family: var(--police-corps);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.bloc-langue select:focus {
+  outline: 1px solid var(--accent);
+}
+
 .bouton-fantome {
   all: unset;
   cursor: pointer;
@@ -230,6 +280,10 @@ body {
   background: var(--surface);
   border: 1px solid rgba(242,239,226,0.1);
   border-radius: 14px;
+}
+
+.barre-saisie[hidden] {
+  display: none;
 }
 
 .bouton-icone {

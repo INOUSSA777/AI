@@ -34,10 +34,16 @@ app.add_middleware(
 class MessageChat(BaseModel):
     question: str
     historique: list[dict] = []
+    langue: str = "fr"
 
 
 class TexteAParler(BaseModel):
     texte: str
+    langue: str = "fr"
+
+
+class PromptImage(BaseModel):
+    prompt: str
 
 
 @app.get("/api/sante")
@@ -51,7 +57,7 @@ def chat(message: MessageChat):
     if not message.question.strip():
         raise HTTPException(status_code=400, detail="La question est vide.")
     try:
-        reponse = chat_ai.chat_response(message.question, message.historique)
+        reponse = chat_ai.chat_response(message.question, message.historique, message.langue)
         return {"reponse": reponse}
     except Exception as erreur:
         raise HTTPException(status_code=500, detail=str(erreur))
@@ -67,13 +73,33 @@ async def analyser_image(fichier: UploadFile = File(...), question: str = "Décr
         raise HTTPException(status_code=500, detail=str(erreur))
 
 
+@app.post("/api/generer-image")
+def generer_image(donnees: PromptImage):
+    """Génère une image à partir d'une description texte."""
+    if not donnees.prompt.strip():
+        raise HTTPException(status_code=400, detail="La description est vide.")
+    try:
+        image_bytes = chat_ai.generer_image(donnees.prompt)
+        return StreamingResponse(io.BytesIO(image_bytes), media_type="image/png")
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
 @app.post("/api/parler")
 def parler(donnees: TexteAParler):
     """Convertit du texte en audio (mp3) et le renvoie directement."""
     if not donnees.texte.strip():
         raise HTTPException(status_code=400, detail="Le texte est vide.")
+
+    code_gtts = chat_ai.LANGUES_GTTS.get(donnees.langue)
+    if code_gtts is None:
+        raise HTTPException(
+            status_code=400,
+            detail="La lecture audio n'est pas disponible en mooré pour le moment.",
+        )
+
     try:
-        tts = gTTS(text=donnees.texte, lang="fr")
+        tts = gTTS(text=donnees.texte, lang=code_gtts)
         buffer = io.BytesIO()
         tts.write_to_fp(buffer)
         buffer.seek(0)

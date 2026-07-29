@@ -17,24 +17,33 @@
       <span class="craie-point"></span>
       <h1>INOUS<span class="point-final">.AI</span></h1>
     </div>
-    <p class="sous-titre">Assistant éducatif</p>
+    <p class="sous-titre" data-i18n="sousTitre">Assistant éducatif</p>
 
     <nav class="modes">
       <button class="mode-btn actif" data-mode="chat">
-        <span class="mode-num">01</span> Discussion
+        <span class="mode-num">01</span> <span data-i18n="modeDiscussion">Discussion</span>
       </button>
       <button class="mode-btn" data-mode="image">
-        <span class="mode-num">02</span> Analyser une image
+        <span class="mode-num">02</span> <span data-i18n="modeImage">Analyser une image</span>
       </button>
-      <button class="mode-btn" data-mode="voix">
-        <span class="mode-num">03</span> Voix
+      <button class="mode-btn" data-mode="generation">
+        <span class="mode-num">03</span> 🎨 <span data-i18n="modeGeneration">Générer une image</span>
       </button>
     </nav>
 
-    <button id="btn-effacer" class="bouton-fantome">Effacer la session</button>
+    <div class="bloc-langue">
+      <label for="selecteur-langue" data-i18n="labelLangue">Langue de conversation</label>
+      <select id="selecteur-langue">
+        <option value="fr" selected>Français</option>
+        <option value="en">English</option>
+        <option value="moore">Mooré</option>
+      </select>
+    </div>
+
+    <button id="btn-effacer" class="bouton-fantome" data-i18n="btnEffacer">Effacer la session</button>
 
     <div class="statut" id="statut-api">
-      <span class="pastille"></span> <span id="statut-texte">Vérification…</span>
+      <span class="pastille"></span> <span id="statut-texte" data-i18n="statutVerification">Vérification…</span>
     </div>
   </aside>
 
@@ -42,7 +51,7 @@
 
     <div id="fil-conversation" class="fil-conversation">
       <div class="message message-ia">
-        <div class="bulle">
+        <div class="bulle" id="message-accueil" data-i18n-html="messageAccueil">
           Bonjour, je suis <strong>INOUS.AI</strong>. Pose-moi une question de cours,
           envoie-moi une image à analyser, ou parle-moi directement au micro.
         </div>
@@ -55,18 +64,31 @@
     </div>
 
     <form id="formulaire-saisie" class="barre-saisie">
-      <label class="bouton-icone" title="Joindre une image">
+      <label class="bouton-icone" id="label-fichier" title="Joindre une image" data-i18n-title="titreJoindre">
         <input type="file" id="entree-fichier" accept="image/*" hidden>
         📎
       </label>
-      <button type="button" id="bouton-micro" class="bouton-icone" title="Parler">🎙️</button>
+      <button type="button" id="bouton-micro" class="bouton-icone" title="Parler" data-i18n-title="titreParler">🎙️</button>
       <input
         type="text"
         id="entree-texte"
         placeholder="Écris ta question ici…"
+        data-i18n-placeholder="placeholderTexte"
         autocomplete="off"
       >
-      <button type="submit" class="bouton-envoyer">Envoyer</button>
+      <button type="submit" class="bouton-envoyer" data-i18n="btnEnvoyer">Envoyer</button>
+    </form>
+
+    <form id="formulaire-generation" class="barre-saisie" hidden>
+      <button type="button" id="bouton-micro-image" class="bouton-icone" title="Décrire à la voix" data-i18n-title="titreParlerImage">🎙️</button>
+      <input
+        type="text"
+        id="entree-prompt-image"
+        placeholder="Décris l'image que tu veux générer…"
+        data-i18n-placeholder="placeholderImage"
+        autocomplete="off"
+      >
+      <button type="submit" class="bouton-envoyer" data-i18n="btnGenerer">🎨 Générer</button>
     </form>
 
   </main>
