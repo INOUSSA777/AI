@@ -4,3 +4,5 @@ openai==2.6.1
 python-dotenv==1.2.1
 python-multipart==0.0.20
 gTTS==2.5.4
+pypdf==5.1.0
+supabase==2.10.0

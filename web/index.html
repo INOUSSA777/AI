@@ -3,17 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>INOUS.AI</title>
-<meta name="description" content="INOUS.AI est un assistant éducatif intelligent : pose tes questions de cours, fais analyser des images, et discute par la voix.">
+<title>INOUS.AI — Assistant éducatif</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
 <div class="app">
 
+  <div class="fond-tiroir-mobile" id="fond-tiroir-mobile"></div>
+
   <aside class="panneau-lateral">
+    <button type="button" id="bouton-fermer-menu" class="bouton-toggle-menu" title="Masquer le menu">☰</button>
+
     <div class="entete-marque">
       <span class="craie-point"></span>
       <h1>INOUS<span class="point-final">.AI</span></h1>
@@ -22,15 +29,37 @@
 
     <nav class="modes">
       <button class="mode-btn actif" data-mode="chat">
-        <span class="mode-num">01</span> <span data-i18n="modeDiscussion">Discussion</span>
+        <span class="mode-num">01</span> 🤖 <span data-i18n="modeChat">Assistant IA</span>
       </button>
-      <button class="mode-btn" data-mode="image">
-        <span class="mode-num">02</span> <span data-i18n="modeImage">Analyser une image</span>
+      <button class="mode-btn" data-mode="etude">
+        <span class="mode-num">02</span> 📚 <span data-i18n="modeEtude">Étudier avec moi</span>
       </button>
-      <button class="mode-btn" data-mode="generation">
-        <span class="mode-num">03</span> 🎨 <span data-i18n="modeGeneration">Générer une image</span>
+      <button class="mode-btn" data-mode="concours">
+        <span class="mode-num">03</span> 🏆 <span data-i18n="modeConcours">Prépa Concours</span>
+      </button>
+      <button class="mode-btn" data-mode="bibliotheque">
+        <span class="mode-num">04</span> 📖 <span data-i18n="modeBibliotheque">Bibliothèque</span>
+      </button>
+      <button class="mode-btn" data-mode="jeux">
+        <span class="mode-num">05</span> 🎮 <span data-i18n="modeJeux">Jeux pour enfants</span>
+      </button>
+      <button class="mode-btn" data-mode="orientation">
+        <span class="mode-num">06</span> 💼 <span data-i18n="modeOrientation">Orientation</span>
       </button>
     </nav>
+
+    <div class="bloc-compte" id="bloc-compte">
+      <div id="compte-deconnecte">
+        <button type="button" id="btn-ouvrir-connexion" class="bouton-compte">👤 Se connecter</button>
+      </div>
+      <div id="compte-connecte" hidden>
+        <div class="compte-info">
+          <span id="compte-email"></span>
+          <span id="compte-progres"></span>
+        </div>
+        <button type="button" id="btn-deconnexion" class="bouton-fantome">Se déconnecter</button>
+      </div>
+    </div>
 
     <div class="bloc-langue">
       <label for="selecteur-langue" data-i18n="labelLangue">Langue de conversation</label>
@@ -50,11 +79,12 @@
 
   <main class="zone-chat">
 
+    <!-- ===== Mode Assistant IA (chat libre) ===== -->
     <div id="fil-conversation" class="fil-conversation">
       <div class="message message-ia">
         <div class="bulle" id="message-accueil" data-i18n-html="messageAccueil">
-          Bonjour, je suis <strong>INOUS.AI</strong>. Pose-moi une question de cours,
-          envoie-moi une image à analyser, ou parle-moi directement au micro.
+          Bonjour, je suis <strong>INOUS.AI</strong>. Pose-moi une question, joins une image à analyser avec 📎,
+          ou demande-moi de générer une image ("dessine-moi...", "crée une image de...").
         </div>
       </div>
     </div>
@@ -64,36 +94,265 @@
       <button id="retirer-image">✕</button>
     </div>
 
+    <div class="actions-rapides" id="actions-rapides">
+      <button type="button" class="pastille-action" data-modele="Explique-moi : " data-i18n="actionExpliquer">Expliquer</button>
+      <button type="button" class="pastille-action" data-modele="Résume ce texte : " data-i18n="actionResumer">Résumer</button>
+      <button type="button" class="pastille-action" data-modele="Interroge-moi sur : " data-i18n="actionInterroger">Interroge-moi</button>
+      <button type="button" class="pastille-action" data-modele="Crée un exercice sur : " data-i18n="actionExercice">Crée un exercice</button>
+      <button type="button" class="pastille-action" data-modele="Corrige ce devoir : " data-i18n="actionCorriger">Corrige mon devoir</button>
+      <button type="button" class="pastille-action" data-modele="Explique-moi autrement, plus simplement : " data-i18n="actionAutrement">Explique autrement</button>
+      <button type="button" class="pastille-action" data-modele="Donne-moi un exemple lié au Burkina Faso pour : " data-i18n="actionExemple">Exemple burkinabè</button>
+    </div>
+
     <form id="formulaire-saisie" class="barre-saisie">
       <label class="bouton-icone" id="label-fichier" title="Joindre une image" data-i18n-title="titreJoindre">
         <input type="file" id="entree-fichier" accept="image/*" hidden>
         📎
       </label>
       <button type="button" id="bouton-micro" class="bouton-icone" title="Parler" data-i18n-title="titreParler">🎙️</button>
-      <input
-        type="text"
-        id="entree-texte"
-        placeholder="Écris ta question ici…"
-        data-i18n-placeholder="placeholderTexte"
-        autocomplete="off"
-      >
+      <input type="text" id="entree-texte" placeholder="Écris ta question ici…" data-i18n-placeholder="placeholderTexte" autocomplete="off">
       <button type="submit" class="bouton-envoyer" data-i18n="btnEnvoyer">Envoyer</button>
     </form>
 
-    <form id="formulaire-generation" class="barre-saisie" hidden>
-      <button type="button" id="bouton-micro-image" class="bouton-icone" title="Décrire à la voix" data-i18n-title="titreParlerImage">🎙️</button>
-      <input
-        type="text"
-        id="entree-prompt-image"
-        placeholder="Décris l'image que tu veux générer…"
-        data-i18n-placeholder="placeholderImage"
-        autocomplete="off"
-      >
-      <button type="submit" class="bouton-envoyer" data-i18n="btnGenerer">🎨 Générer</button>
-    </form>
+    <!-- ===== Mode Étudier avec moi : parcours guidé en étapes ===== -->
+    <div class="ecran-dedie ecran-etude-avancee" id="ecran-etude" hidden>
+
+      <div class="etude-entete">
+        <div>
+          <h2 data-i18n="etudeTitre">Étudier avec moi</h2>
+          <p class="guide-desc" data-i18n="etudeDesc">Ton parcours d'apprentissage guidé, étape par étape.</p>
+        </div>
+      </div>
+
+      <form id="formulaire-etude" class="etude-selecteurs">
+        <div class="etude-champ">
+          <label data-i18n="etudeLabelParcours">Parcours</label>
+          <select id="etude-parcours">
+            <option value="CEPE">CEPE</option>
+            <option value="BEPC">BEPC</option>
+            <option value="BAC A">BAC A</option>
+            <option value="BAC C" selected>BAC C</option>
+            <option value="Université">Université</option>
+          </select>
+        </div>
+        <span class="etude-fleche">→</span>
+        <div class="etude-champ">
+          <label data-i18n="etudeLabelMatiere">Matière</label>
+          <select id="etude-matiere"></select>
+        </div>
+        <span class="etude-fleche">→</span>
+        <div class="etude-champ etude-champ-large">
+          <label data-i18n="etudeLabelSujet">Sujet / Chapitre</label>
+          <input type="text" id="etude-sujet" placeholder="Ex : les fractions, la dérivation…" data-i18n-placeholder="etudePlaceholderSujet">
+        </div>
+        <button type="submit" class="bouton-envoyer bouton-guide" data-i18n="etudeBouton">Commencer la séance</button>
+      </form>
+
+      <div class="etude-session" id="etude-session" hidden>
+
+        <aside class="etude-plan">
+          <h3 data-i18n="etudePlanTitre">Plan de la séance</h3>
+          <ol class="etude-etapes" id="etude-etapes">
+            <li data-etape="cours" class="etape-active"><span class="etape-num">1</span><div><strong data-i18n="etapeCours">Cours</strong><small data-i18n="etapeCoursDesc">Comprendre la leçon</small></div></li>
+            <li data-etape="exemple"><span class="etape-num">2</span><div><strong data-i18n="etapeExemple">Exemple</strong><small data-i18n="etapeExempleDesc">Voir un cas résolu</small></div></li>
+            <li data-etape="quiz"><span class="etape-num">3</span><div><strong data-i18n="etapeQuiz">Quiz</strong><small data-i18n="etapeQuizDesc">Vérifier ta compréhension</small></div></li>
+            <li data-etape="exercices"><span class="etape-num">4</span><div><strong data-i18n="etapeExercices">Exercices</strong><small data-i18n="etapeExercicesDesc">S'entraîner</small></div></li>
+            <li data-etape="correction"><span class="etape-num">5</span><div><strong data-i18n="etapeCorrection">Correction</strong><small data-i18n="etapeCorrectionDesc">Voir les corrigés</small></div></li>
+            <li data-etape="bilan"><span class="etape-num">6</span><div><strong data-i18n="etapeBilan">Bilan</strong><small data-i18n="etapeBilanDesc">Fin de séance</small></div></li>
+          </ol>
+          <div class="etude-progression">
+            <div class="etude-barre-progression"><div class="etude-barre-remplie" id="etude-barre-remplie"></div></div>
+            <span id="etude-progression-texte">0%</span>
+          </div>
+          <p class="note-avertissement" data-i18n="etudeNoteSession">ℹ️ Cette progression concerne uniquement la séance en cours — elle repart de zéro si tu quittes la page.</p>
+        </aside>
+
+        <div class="etude-contenu" id="etude-contenu"></div>
+
+        <aside class="etude-outils">
+          <h3 data-i18n="etudeOutilsTitre">Outils d'aide</h3>
+          <button type="button" class="pastille-action pastille-outil" data-outil="autrement" data-i18n="actionAutrement">Explique autrement</button>
+          <button type="button" class="pastille-action pastille-outil" data-outil="exemple" data-i18n="actionExemple">Exemple burkinabè</button>
+          <button type="button" class="pastille-action pastille-outil" data-outil="resume" data-i18n="etudeOutilResume">Résumé du cours</button>
+        </aside>
+
+      </div>
+    </div>
+
+    <!-- ===== Mode Prépa Concours : écran dédié ===== -->
+    <div class="ecran-dedie ecran-concours" id="ecran-concours" hidden>
+
+      <div class="concours-entete">
+        <div>
+          <h2 data-i18n="concoursTitre">Préparation concours</h2>
+          <p class="guide-desc" data-i18n="concoursDesc">Prépare-toi efficacement et réussis ton concours</p>
+        </div>
+        <input type="text" id="concours-recherche" class="concours-recherche" placeholder="Rechercher un concours…" data-i18n-placeholder="concoursPlaceholderRecherche">
+      </div>
+
+      <div class="concours-filtres" id="concours-filtres">
+        <button type="button" class="filtre-concours actif" data-categorie="Tous">Tous</button>
+        <button type="button" class="filtre-concours" data-categorie="Éducation">Éducation</button>
+        <button type="button" class="filtre-concours" data-categorie="Administration">Administration</button>
+        <button type="button" class="filtre-concours" data-categorie="Sécurité">Sécurité</button>
+        <button type="button" class="filtre-concours" data-categorie="Finances">Finances</button>
+        <button type="button" class="filtre-concours" data-categorie="Justice">Justice</button>
+      </div>
+
+      <div class="concours-corps">
+        <div class="concours-principal">
+          <h3 data-i18n="concoursPopulaires">Concours nationaux</h3>
+          <div class="grille-concours" id="grille-concours"></div>
+        </div>
+
+        <aside class="concours-aside">
+          <div class="carte-aside carte-conseils">
+            <h3>💡 <span data-i18n="concoursConseilsTitre">Conseil du jour</span></h3>
+            <p id="concours-conseil-texte"></p>
+          </div>
+
+          <div class="carte-aside">
+            <h3 data-i18n="concoursAccesRapide">Accès rapide</h3>
+            <button type="button" class="acces-rapide-btn" data-outil="fiches">📄 <span data-i18n="concoursFiches">Fiches de révision</span></button>
+            <button type="button" class="acces-rapide-btn" data-outil="qcm">❓ <span data-i18n="concoursQcm">QCM d'entraînement</span></button>
+            <button type="button" class="acces-rapide-btn" data-outil="annales">📚 <span data-i18n="concoursAnnales">Sujets & Annales</span></button>
+          </div>
+        </aside>
+      </div>
+
+      <div class="concours-resultat" id="concours-resultat" hidden></div>
+    </div>
+
+    <!-- ===== Mode Bibliothèque : importer un PDF et discuter avec son contenu ===== -->
+    <div class="ecran-dedie ecran-bibliotheque" id="ecran-bibliotheque" hidden>
+
+      <h2 data-i18n="biblioTitre">Bibliothèque intelligente</h2>
+      <p class="guide-desc" data-i18n="biblioDesc">Importe un document PDF et discute avec son contenu — résumé, quiz, questions, tout est généré pendant ta session.</p>
+
+      <div class="biblio-hero">
+        <div class="biblio-hero-texte">
+          <h3 data-i18n="biblioHeroTitre">Transforme un document en apprentissage</h3>
+          <p data-i18n="biblioHeroDesc">Importe un PDF (cours, annale, article) et pose-lui des questions, fais-en un résumé, ou génère un quiz dessus.</p>
+          <label class="biblio-bouton-importer">
+            <input type="file" id="biblio-fichier" accept="application/pdf" hidden>
+            ⬆️ <span data-i18n="biblioImporter">Importer un PDF</span>
+          </label>
+          <p class="biblio-statut-doc" id="biblio-statut-doc"></p>
+        </div>
+      </div>
+
+      <h3 class="biblio-section-titre" data-i18n="biblioQueVeuxTu">Que veux-tu faire avec ce document ?</h3>
+      <div class="grille-actions-biblio" id="grille-actions-biblio">
+        <button type="button" class="carte-action-biblio" data-action="resumer">📘 <span data-i18n="biblioResumer">Résumer le document</span></button>
+        <button type="button" class="carte-action-biblio" data-action="quiz">✅ <span data-i18n="biblioQuiz">Créer un quiz dessus</span></button>
+        <button type="button" class="carte-action-biblio" data-action="fiche">📄 <span data-i18n="biblioFiche">Créer une fiche de révision</span></button>
+        <button type="button" class="carte-action-biblio" data-action="question">❓ <span data-i18n="biblioQuestion">Poser une question précise</span></button>
+      </div>
+
+      <div class="biblio-question-libre" id="biblio-question-libre" hidden>
+        <input type="text" id="biblio-question-texte" placeholder="Ta question sur ce document…" data-i18n-placeholder="biblioPlaceholderQuestion">
+        <button type="button" class="bouton-envoyer" id="biblio-poser-question" data-i18n="biblioEnvoyer">Envoyer</button>
+      </div>
+
+      <div class="concours-resultat" id="biblio-resultat" hidden></div>
+
+      <p class="note-avertissement" data-i18n="biblioNote">ℹ️ Rien n'est sauvegardé sur le serveur : le document reste en mémoire seulement pendant que cette page est ouverte.</p>
+    </div>
+
+    <!-- ===== Mode Jeux pour enfants : écran dédié ===== -->
+    <div class="ecran-dedie" id="ecran-jeux" hidden>
+      <form id="formulaire-jeux" class="panneau-guide">
+        <h2 data-i18n="jeuxTitre">Jeux pour enfants</h2>
+        <p class="guide-desc" data-i18n="jeuxDesc">Des petits quiz amusants générés par l'IA pour s'entraîner en s'amusant.</p>
+
+        <label data-i18n="jeuxLabelType">Type de jeu</label>
+        <select id="jeux-type">
+          <option value="calcul" data-i18n="jeuxTypeCalcul">🔢 Quiz de calcul</option>
+          <option value="vocabulaire" data-i18n="jeuxTypeVocabulaire">📖 Quiz de vocabulaire</option>
+          <option value="culture" data-i18n="jeuxTypeCulture">🌍 Quiz de culture générale</option>
+        </select>
+
+        <label data-i18n="jeuxLabelNiveau">Niveau</label>
+        <select id="jeux-niveau">
+          <option value="CP">CP</option>
+          <option value="CE1">CE1</option>
+          <option value="CE2" selected>CE2</option>
+          <option value="CM1">CM1</option>
+          <option value="CM2">CM2</option>
+        </select>
+
+        <button type="submit" class="bouton-envoyer bouton-guide" data-i18n="jeuxBouton">Commencer à jouer</button>
+      </form>
+      <div class="zone-jeu" id="zone-jeu" hidden></div>
+    </div>
+
+    <!-- ===== Mode Orientation : écran dédié ===== -->
+    <div class="ecran-dedie" id="ecran-orientation" hidden>
+      <form id="formulaire-orientation" class="panneau-guide">
+        <h2 data-i18n="orientationTitre">Orientation</h2>
+        <p class="guide-desc" data-i18n="orientationDesc">Décris ta situation, INOUS.AI te propose un parcours indicatif.</p>
+
+        <label data-i18n="orientationLabelDiplome">Dernier diplôme obtenu (ou en préparation)</label>
+        <select id="orientation-diplome">
+          <option value="CEP" data-i18n="diplomeCEP">CEP</option>
+          <option value="BEPC" selected data-i18n="diplomeBEPC">BEPC</option>
+          <option value="Baccalauréat" data-i18n="diplomeBac">Baccalauréat</option>
+          <option value="Licence" data-i18n="diplomeLicence">Licence</option>
+        </select>
+
+        <label data-i18n="orientationLabelMetier">Métier ou domaine qui t'intéresse</label>
+        <input type="text" id="orientation-metier" placeholder="Ex : médecine, informatique, enseignement…" data-i18n-placeholder="orientationPlaceholderMetier">
+
+        <button type="submit" class="bouton-envoyer bouton-guide" data-i18n="orientationBouton">Obtenir mon parcours</button>
+
+        <p class="note-avertissement" data-i18n="orientationAvertissement">
+          ℹ️ Les informations sur les écoles, admissions et salaires sont générées par l'IA à titre indicatif — vérifie toujours auprès des établissements officiels.
+        </p>
+      </form>
+      <div class="zone-resultat-guide" id="zone-resultat-orientation" hidden></div>
+    </div>
 
   </main>
 
+</div>
+
+<button type="button" id="bouton-ouvrir-menu" class="bouton-toggle-menu bouton-toggle-flottant" hidden title="Afficher le menu">☰</button>
+
+<button id="bouton-stop-audio" class="bouton-stop-audio" hidden>
+  ⏹️ <span data-i18n="btnStopAudio">Stopper l'audio</span>
+</button>
+
+<div class="fond-modale" id="fond-modale-compte" hidden>
+  <div class="modale-compte">
+    <button type="button" class="fermer-modale" id="fermer-modale-compte">✕</button>
+    <h2 id="titre-modale-compte">Se connecter</h2>
+    <input type="email" id="compte-champ-email" placeholder="Adresse email" autocomplete="email">
+    <input type="password" id="compte-champ-mdp" placeholder="Mot de passe (6 caractères min.)" autocomplete="current-password">
+    <button type="button" class="bouton-envoyer" id="compte-bouton-valider">Se connecter</button>
+    <p class="compte-message" id="compte-message"></p>
+    <button type="button" class="lien-bascule" id="compte-mdp-oublie">Mot de passe oublié ?</button>
+    <button type="button" class="lien-bascule" id="compte-bascule">Pas de compte ? Crée-en un</button>
+  </div>
+</div>
+
+<div class="fond-modale" id="fond-modale-reinit" hidden>
+  <div class="modale-compte">
+    <button type="button" class="fermer-modale" id="fermer-modale-reinit">✕</button>
+    <h2>Mot de passe oublié</h2>
+    <p class="guide-desc" style="margin:0 0 4px;">Entre ton email, tu recevras un lien pour choisir un nouveau mot de passe.</p>
+    <input type="email" id="reinit-champ-email" placeholder="Adresse email" autocomplete="email">
+    <button type="button" class="bouton-envoyer" id="reinit-bouton-envoyer">Envoyer le lien</button>
+    <p class="compte-message" id="reinit-message"></p>
+  </div>
+</div>
+
+<div class="fond-modale" id="fond-modale-nouveau-mdp" hidden>
+  <div class="modale-compte">
+    <h2>Choisis un nouveau mot de passe</h2>
+    <input type="password" id="nouveau-mdp-champ" placeholder="Nouveau mot de passe (6 caractères min.)" autocomplete="new-password">
+    <button type="button" class="bouton-envoyer" id="nouveau-mdp-bouton">Valider</button>
+    <p class="compte-message" id="nouveau-mdp-message"></p>
+  </div>
 </div>
 
 <script src="script.js"></script>

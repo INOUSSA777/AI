@@ -17,13 +17,25 @@
 
 * { box-sizing: border-box; }
 
+/* Règle globale et définitive : quel que soit le "display" qu'une classe
+   impose par ailleurs (flex, grid...), l'attribut hidden doit toujours
+   l'emporter. Sans ça, chaque nouvel écran avec "display:flex" risque de
+   rester visible même masqué par JavaScript — bug rencontré plusieurs fois. */
+[hidden] {
+  display: none !important;
+}
+
 html, body {
   margin: 0;
   height: 100%;
   background: var(--fond);
   color: var(--craie);
   font-family: var(--police-corps);
+  overflow-x: hidden;
+  max-width: 100vw;
 }
+
+img, svg { max-width: 100%; height: auto; }
 
 /* texture craie très subtile sur le fond */
 body {
@@ -32,11 +44,43 @@ body {
     radial-gradient(circle at 80% 70%, rgba(255,255,255,0.015) 0, transparent 40%);
 }
 
+.bouton-toggle-menu[hidden] {
+  display: none;
+}
+
+.bouton-toggle-menu {
+  all: unset;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  color: var(--craie-douce);
+  border-radius: 7px;
+  margin-bottom: 14px;
+}
+.bouton-toggle-menu:hover { background: var(--surface); color: var(--craie); }
+
+.bouton-toggle-flottant {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 60;
+  background: var(--fond);
+}
+
+.app.menu-cache {
+  grid-template-columns: 0 1fr;
+}
+
 .app {
   display: grid;
   grid-template-columns: 260px 1fr;
   height: 100vh;
   overflow: hidden;
+  transition: grid-template-columns 0.15s ease;
 }
 
 /* ---------- panneau latéral ---------- */
@@ -51,6 +95,11 @@ body {
   height: 100vh;
   align-self: start;
   overflow-y: auto;
+  transition: opacity 0.2s ease;
+}
+.app.menu-cache .panneau-lateral {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .entete-marque {
@@ -114,8 +163,9 @@ body {
 .mode-btn:hover { background: var(--surface); }
 
 .mode-btn.actif {
-  background: var(--surface-haute);
+  background: linear-gradient(90deg, rgba(232,183,92,0.16), rgba(139,111,216,0.10));
   color: var(--craie);
+  border-left: 2px solid var(--accent);
 }
 .mode-btn.actif .mode-num { color: var(--accent); }
 
@@ -136,6 +186,937 @@ body {
   font-size: 0.78rem;
   color: var(--muet);
   font-style: italic;
+}
+
+.actions-rapides {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 clamp(20px, 8vw, 140px) 10px;
+}
+
+.actions-rapides[hidden] {
+  display: none;
+}
+
+.pastille-action {
+  all: unset;
+  cursor: pointer;
+  font-size: 0.76rem;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.1);
+  color: var(--craie-douce);
+}
+.pastille-action:hover {
+  background: var(--surface-haute);
+  color: var(--craie);
+}
+
+.panneau-guide {
+  margin: 0 clamp(20px, 8vw, 140px) 28px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.panneau-guide h2 {
+  font-family: var(--police-affichage);
+  font-size: 1.15rem;
+  margin: 0 0 4px;
+  color: var(--craie);
+}
+
+.guide-desc {
+  font-size: 0.85rem;
+  color: var(--muet);
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.panneau-guide label {
+  font-size: 0.76rem;
+  font-family: var(--police-utilitaire);
+  color: var(--muet);
+  margin-top: 6px;
+}
+
+.panneau-guide select,
+.panneau-guide input[type="text"] {
+  width: 100%;
+  background: var(--surface-haute);
+  color: var(--craie);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: var(--police-corps);
+  font-size: 0.92rem;
+}
+
+.panneau-guide select:focus,
+.panneau-guide input[type="text"]:focus {
+  outline: 1px solid var(--accent);
+}
+
+.bouton-guide {
+  margin-top: 14px;
+  align-self: flex-start;
+}
+
+.note-avertissement {
+  margin-top: 14px;
+  font-size: 0.76rem;
+  color: var(--muet);
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ---------- Étudier avec moi : nouvelle mise en page en étapes ---------- */
+.ecran-etude-avancee {
+  display: flex;
+  flex-direction: column;
+}
+
+.etude-entete h2 {
+  font-family: var(--police-affichage);
+  font-size: 1.4rem;
+  margin: 0 0 4px;
+  color: var(--craie);
+}
+
+.etude-selecteurs {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 14px;
+}
+
+.etude-champ {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 150px;
+}
+.etude-champ-large { flex: 1; min-width: 200px; }
+
+.etude-champ label {
+  font-size: 0.72rem;
+  font-family: var(--police-utilitaire);
+  color: var(--muet);
+}
+
+.etude-champ select,
+.etude-champ input {
+  background: var(--surface-haute);
+  color: var(--craie);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-family: var(--police-corps);
+  font-size: 0.9rem;
+}
+
+.etude-fleche { color: var(--muet); padding-bottom: 10px; }
+
+.etude-session[hidden] {
+  display: none;
+}
+
+.etude-session {
+  display: grid;
+  grid-template-columns: 220px 1fr 210px;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ---- plan de la séance (colonne gauche) ---- */
+.etude-plan {
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 14px;
+  padding: 16px;
+}
+.etude-plan h3 {
+  font-size: 0.85rem;
+  color: var(--muet);
+  font-family: var(--police-utilitaire);
+  margin: 0 0 12px;
+}
+
+.etude-etapes {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.etude-etapes li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.etude-etapes li:hover { background: var(--surface-haute); }
+.etude-etapes li strong { display: block; font-size: 0.85rem; color: var(--craie-douce); }
+.etude-etapes li small { display: block; font-size: 0.7rem; color: var(--muet); }
+
+.etape-num {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--surface-haute);
+  color: var(--muet);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+.etude-etapes li.etape-active { background: var(--accent-doux); }
+.etude-etapes li.etape-active .etape-num { background: var(--accent); color: #2a1f0d; }
+.etude-etapes li.etape-active strong { color: var(--craie); }
+.etude-etapes li.etape-faite .etape-num { background: #7dbb8a; color: #163019; }
+.etude-etapes li.etape-faite strong { color: var(--craie-douce); }
+
+.etude-progression { margin-bottom: 10px; }
+.etude-barre-progression {
+  height: 6px;
+  background: var(--surface-haute);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.etude-barre-remplie {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+#etude-progression-texte {
+  font-size: 0.72rem;
+  color: var(--muet);
+  font-family: var(--police-utilitaire);
+}
+
+/* ---- contenu central ---- */
+.etude-contenu {
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 14px;
+  padding: 24px;
+  min-height: 320px;
+  line-height: 1.65;
+}
+
+.etude-etiquette-etape {
+  display: inline-block;
+  font-family: var(--police-utilitaire);
+  font-size: 0.72rem;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.etude-bloc-callout {
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 14px 0;
+  border: 1px solid rgba(242,239,226,0.1);
+}
+.etude-bloc-callout.definition { background: rgba(232,183,92,0.08); border-color: rgba(232,183,92,0.25); }
+.etude-bloc-callout.exemple { background: rgba(125,187,138,0.08); border-color: rgba(125,187,138,0.25); }
+.etude-bloc-callout .etiquette-callout {
+  font-weight: 600;
+  font-size: 0.82rem;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.etude-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  gap: 10px;
+}
+.bouton-etape-nav {
+  all: unset;
+  cursor: pointer;
+  padding: 9px 16px;
+  border-radius: 9px;
+  background: var(--surface-haute);
+  color: var(--craie);
+  font-size: 0.88rem;
+}
+.bouton-etape-nav:hover { filter: brightness(1.1); }
+.bouton-etape-nav.suivant { background: var(--accent); color: #1c2418; font-weight: 600; }
+.bouton-etape-nav:disabled { opacity: 0.4; cursor: default; }
+
+.bouton-ecouter-cours {
+  all: unset;
+  cursor: pointer;
+  padding: 8px 14px;
+  border-radius: 9px;
+  background: var(--surface-haute);
+  color: var(--craie-douce);
+  font-size: 0.85rem;
+}
+.bouton-ecouter-cours:hover { color: var(--craie); }
+
+/* ---- outils (colonne droite) ---- */
+.etude-outils {
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.etude-outils h3 {
+  font-size: 0.85rem;
+  color: var(--muet);
+  font-family: var(--police-utilitaire);
+  margin: 0 0 6px;
+}
+.pastille-outil {
+  width: 100%;
+  text-align: left;
+  border-radius: 8px;
+}
+
+/* ---- exercices/corrections en cartes ---- */
+.grille-exercices {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.carte-exercice {
+  background: var(--surface-haute);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+}
+.carte-exercice:hover { border-color: var(--accent); }
+.carte-exercice .titre-exercice { font-size: 0.85rem; color: var(--craie); display: block; margin-bottom: 6px; }
+.badge-difficulte {
+  font-size: 0.68rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-family: var(--police-utilitaire);
+}
+.badge-difficulte.Facile { background: rgba(125,187,138,0.2); color: #a8d9b0; }
+.badge-difficulte.Moyen { background: rgba(232,183,92,0.2); color: var(--accent); }
+.badge-difficulte.Difficile { background: rgba(217,123,108,0.2); color: var(--erreur); }
+
+.etude-corrige-detail {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed rgba(242,239,226,0.15);
+}
+
+@media (max-width: 900px) {
+  .etude-session { grid-template-columns: 1fr; }
+}
+
+/* ---------- Prépa Concours : accent violet propre à cet écran ---------- */
+.ecran-concours {
+  --violet: #8b6fd8;
+  --violet-doux: rgba(139, 111, 216, 0.16);
+  --violet-fonce: #4a3a80;
+}
+
+.ecran-concours[hidden] { display: none; }
+
+.concours-entete {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.concours-entete h2 {
+  font-family: var(--police-affichage);
+  font-size: 1.4rem;
+  margin: 0 0 4px;
+  color: var(--craie);
+}
+
+.concours-recherche {
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.12);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--craie);
+  font-family: var(--police-corps);
+  min-width: 240px;
+}
+
+.concours-filtres {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.filtre-concours {
+  all: unset;
+  cursor: pointer;
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  color: var(--craie-douce);
+  border: 1px solid rgba(242,239,226,0.1);
+}
+.filtre-concours.actif {
+  background: var(--violet);
+  color: #fff;
+  border-color: var(--violet);
+}
+
+.concours-corps {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 20px;
+  align-items: start;
+}
+
+.concours-principal h3 {
+  font-size: 0.95rem;
+  color: var(--craie-douce);
+  margin: 0 0 12px;
+}
+
+.grille-concours {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.carte-concours {
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 14px;
+  padding: 16px;
+}
+.carte-concours-entete {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.carte-concours-icone {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: var(--violet-doux);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+.carte-concours-nom { font-weight: 700; color: var(--craie); font-size: 0.95rem; }
+.carte-concours-organisme { font-size: 0.72rem; color: var(--muet); }
+
+.badge-categorie {
+  display: inline-block;
+  font-size: 0.68rem;
+  padding: 2px 9px;
+  border-radius: 10px;
+  background: var(--violet-doux);
+  color: var(--violet);
+  margin-bottom: 10px;
+}
+
+.carte-concours-infos {
+  font-size: 0.78rem;
+  color: var(--craie-douce);
+  line-height: 1.7;
+  margin-bottom: 12px;
+}
+
+.bouton-se-preparer {
+  all: unset;
+  cursor: pointer;
+  display: block;
+  text-align: center;
+  width: 100%;
+  padding: 9px;
+  border-radius: 9px;
+  background: var(--violet);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.bouton-se-preparer:hover { background: var(--violet-fonce); }
+
+.concours-aside {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.carte-aside {
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 14px;
+  padding: 16px;
+}
+.carte-aside h3 {
+  font-size: 0.82rem;
+  color: var(--craie-douce);
+  margin: 0 0 10px;
+}
+.carte-conseils {
+  background: var(--violet-doux);
+  border-color: rgba(139,111,216,0.3);
+}
+.carte-conseils p { font-size: 0.82rem; color: var(--craie-douce); margin: 0; line-height: 1.5; }
+
+.acces-rapide-btn {
+  all: unset;
+  cursor: pointer;
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--craie-douce);
+  margin-bottom: 4px;
+}
+.acces-rapide-btn:hover { background: var(--surface-haute); color: var(--craie); }
+
+.concours-resultat {
+  margin-top: 20px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid rgba(139,111,216,0.25);
+  border-radius: 14px;
+  line-height: 1.6;
+}
+.concours-resultat[hidden] { display: none; }
+
+@media (max-width: 900px) {
+  .concours-corps { grid-template-columns: 1fr; }
+}
+
+/* ---------- Bibliothèque ---------- */
+.ecran-bibliotheque {
+  --violet: #8b6fd8;
+  --rose: #d86fb0;
+}
+
+.biblio-hero {
+  margin: 18px 0 26px;
+  border-radius: 16px;
+  padding: 28px;
+  background: linear-gradient(135deg, var(--violet-fonce, #4a3a80), var(--violet) 55%, var(--rose));
+}
+.biblio-hero-texte h3 {
+  font-family: var(--police-affichage);
+  font-size: 1.2rem;
+  color: #fff;
+  margin: 0 0 8px;
+}
+.biblio-hero-texte p {
+  color: rgba(255,255,255,0.85);
+  font-size: 0.88rem;
+  margin: 0 0 16px;
+  max-width: 480px;
+}
+
+.biblio-bouton-importer {
+  all: unset;
+  cursor: pointer;
+  display: inline-block;
+  background: #fff;
+  color: #4a3a80;
+  font-weight: 700;
+  padding: 11px 20px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+.biblio-bouton-importer:hover { filter: brightness(0.95); }
+
+.biblio-statut-doc {
+  color: #fff;
+  font-size: 0.82rem;
+  margin: 12px 0 0;
+  font-family: var(--police-utilitaire);
+}
+
+.biblio-section-titre {
+  font-size: 0.95rem;
+  color: var(--craie-douce);
+  margin: 0 0 12px;
+}
+
+.grille-actions-biblio {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.carte-action-biblio {
+  all: unset;
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 0.88rem;
+  color: var(--craie-douce);
+  text-align: center;
+}
+.carte-action-biblio:hover { border-color: var(--violet); color: var(--craie); }
+
+.biblio-question-libre {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.biblio-question-libre input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 9px;
+  padding: 10px 12px;
+  color: var(--craie);
+  font-family: var(--police-corps);
+}
+.biblio-question-libre[hidden] { display: none; }
+
+.horodatage-message {
+  display: block;
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.6);
+  margin-top: 4px;
+  text-align: right;
+}
+
+.actions-message {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(242,239,226,0.08);
+}
+.btn-action-msg {
+  all: unset;
+  cursor: pointer;
+  font-size: 0.76rem;
+  padding: 6px 11px;
+  border-radius: 16px;
+  background: var(--surface-haute);
+  color: var(--craie-douce);
+  border: 1px solid rgba(242,239,226,0.08);
+}
+.btn-action-msg:hover { border-color: var(--accent); color: var(--craie); }
+.btn-action-msg:disabled { opacity: 0.6; cursor: default; }
+
+/* ---------- réponse structurée du chat principal (style premium) ---------- */
+.message { animation: apparitionMessage 0.25s ease; }
+@keyframes apparitionMessage {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .message { animation: none; }
+}
+
+/* révélation progressive des blocs d'une réponse, façon Claude — le contenu
+   est déjà en place (aucun changement de hauteur), seule l'opacité change,
+   donc la page ne "saute" jamais pendant l'animation */
+.bloc-en-attente { opacity: 0; transition: opacity 0.35s ease; }
+.bloc-en-attente.bloc-revele { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .bloc-en-attente { opacity: 1; transition: none; }
+}
+
+.reponse-structuree {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.reponse-structuree-rangee {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 640px) {
+  .reponse-structuree-rangee { grid-template-columns: 1fr; }
+}
+
+.bloc-structure {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(242,239,226,0.08);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.bloc-structure:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.32);
+}
+.bloc-structure-entete {
+  padding: 8px 16px;
+  font-weight: 700;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: linear-gradient(90deg, #d9695f, #c14f57);
+}
+.bloc-structure-corps {
+  padding: 18px;
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.bloc-definition .bloc-structure-corps,
+.bloc-explications .bloc-structure-corps {
+  background: linear-gradient(165deg, rgba(125,187,138,0.20), rgba(125,187,138,0.05));
+  border: 1px solid rgba(125,187,138,0.3);
+  border-top: none;
+}
+.bloc-explications ul { margin: 0; padding-left: 20px; }
+.bloc-explications li { margin-bottom: 8px; }
+.bloc-explications li:last-child { margin-bottom: 0; }
+
+.bloc-exemples .bloc-structure-corps {
+  background: linear-gradient(165deg, rgba(232,206,92,0.22), rgba(232,206,92,0.05));
+  border: 1px solid rgba(232,206,92,0.35);
+  border-top: none;
+}
+.bloc-exemples ol { margin: 0; padding-left: 20px; }
+.bloc-exemples li { margin-bottom: 10px; }
+.bloc-exemples li:last-child { margin-bottom: 0; }
+
+/* blocs optionnels selon la matière (chronologie, langue, graphique, Burkina) */
+.entete-violette { background: linear-gradient(90deg, #6f4fb0, #8b6fd8) !important; }
+.bloc-optionnel .bloc-structure-corps {
+  background: linear-gradient(165deg, rgba(139,111,216,0.16), rgba(139,111,216,0.04));
+  border: 1px solid rgba(139,111,216,0.3);
+  border-top: none;
+}
+.bloc-optionnel p { margin: 0 0 8px; }
+.bloc-optionnel p:last-child { margin-bottom: 0; }
+
+.liste-chronologie { margin: 0; padding-left: 18px; }
+.liste-chronologie li { margin-bottom: 8px; }
+
+.bloc-graphique { text-align: center; }
+.graphique-titre { font-size: 0.85rem; color: var(--craie-douce); margin: 0 0 8px; }
+.graphique-svg { width: 100%; max-width: 460px; height: auto; }
+
+.actions-rapides,
+.actions-rapides + .barre-saisie {
+  transition: none;
+}
+
+.panneau-guide[hidden] {
+  display: none;
+}
+
+/* ---------- écrans dédiés (Étudier avec moi / Jeux / Orientation) ---------- */
+.ecran-dedie {
+  flex: 1;
+  overflow-y: auto;
+  padding: 40px clamp(20px, 8vw, 140px);
+}
+
+.zone-resultat-guide {
+  margin-top: 24px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.08);
+  border-radius: 14px;
+  line-height: 1.6;
+}
+
+.zone-resultat-guide[hidden] { display: none; }
+
+/* chaque idée/paragraphe de la réponse de l'IA repart à la ligne */
+.ligne-reponse {
+  margin: 0 0 12px;
+}
+.ligne-reponse:last-child { margin-bottom: 0; }
+
+.chargement-guide {
+  color: var(--muet);
+  font-family: var(--police-utilitaire);
+  font-size: 0.85rem;
+}
+
+/* ---------- bouton flottant pour stopper l'audio ---------- */
+.bouton-stop-audio {
+  all: unset;
+  cursor: pointer;
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  background: var(--erreur);
+  color: #2a1512;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 10px 16px;
+  border-radius: 24px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+}
+.bouton-stop-audio:hover { filter: brightness(1.08); }
+.bouton-stop-audio[hidden] { display: none; }
+
+/* ---------- interface de jeu ---------- */
+.zone-jeu {
+  margin-top: 24px;
+}
+.zone-jeu[hidden] { display: none; }
+
+.carte-question {
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.08);
+  border-radius: 14px;
+  padding: 24px;
+}
+
+.jeu-progression {
+  font-family: var(--police-utilitaire);
+  font-size: 0.78rem;
+  color: var(--muet);
+  margin-bottom: 10px;
+}
+
+.jeu-question {
+  font-size: 1.1rem;
+  margin-bottom: 18px;
+  color: var(--craie);
+}
+
+.jeu-choix {
+  display: grid;
+  gap: 10px;
+}
+
+.bouton-choix {
+  all: unset;
+  cursor: pointer;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--surface-haute);
+  border: 1px solid rgba(242,239,226,0.1);
+  color: var(--craie);
+  font-size: 0.95rem;
+}
+.bouton-choix:hover { border-color: var(--accent); }
+.bouton-choix.bonne-reponse { background: rgba(125,187,138,0.25); border-color: #7dbb8a; }
+.bouton-choix.mauvaise-reponse { background: rgba(217,123,108,0.25); border-color: var(--erreur); }
+.bouton-choix:disabled { cursor: default; }
+
+.jeu-suivant {
+  margin-top: 18px;
+}
+
+.jeu-score {
+  text-align: center;
+  font-size: 1.2rem;
+  padding: 20px;
+}
+
+/* ---------- compte (connexion / inscription) ---------- */
+.bloc-compte {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(242,239,226,0.08);
+}
+.bouton-compte {
+  all: unset;
+  cursor: pointer;
+  width: 100%;
+  text-align: center;
+  padding: 9px;
+  border-radius: 9px;
+  background: var(--accent);
+  color: #1c2418;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+.compte-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+}
+#compte-email { color: var(--craie-douce); }
+#compte-progres { color: var(--accent); font-family: var(--police-utilitaire); font-size: 0.75rem; }
+
+.fond-modale {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.fond-modale[hidden] { display: none; }
+
+.modale-compte {
+  background: var(--panneau);
+  border: 1px solid rgba(242,239,226,0.12);
+  border-radius: 16px;
+  padding: 28px;
+  width: min(320px, 90vw);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.modale-compte h2 {
+  font-family: var(--police-affichage);
+  color: var(--craie);
+  margin: 0 0 10px;
+}
+.modale-compte input {
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 9px;
+  padding: 10px 12px;
+  color: var(--craie);
+  font-family: var(--police-corps);
+}
+.fermer-modale {
+  all: unset;
+  cursor: pointer;
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  color: var(--muet);
+}
+.compte-message {
+  font-size: 0.78rem;
+  color: var(--erreur);
+  margin: 0;
+  min-height: 1em;
+}
+.lien-bascule {
+  all: unset;
+  cursor: pointer;
+  font-size: 0.8rem;
+  color: var(--accent);
+  text-align: center;
 }
 
 .bloc-langue {
@@ -219,6 +1200,10 @@ body {
   gap: 22px;
 }
 
+.fil-conversation[hidden] {
+  display: none;
+}
+
 .message { display: flex; }
 .message-utilisateur { justify-content: flex-end; }
 .message-ia { justify-content: flex-start; }
@@ -267,6 +1252,10 @@ body {
   padding: 8px 12px;
   border-radius: 10px;
   width: fit-content;
+}
+
+.zone-image-active[hidden] {
+  display: none;
 }
 .zone-image-active img {
   height: 48px;
@@ -321,12 +1310,13 @@ body {
 .bouton-envoyer {
   all: unset;
   cursor: pointer;
-  background: var(--accent);
+  background: linear-gradient(120deg, var(--accent), #d9a04e);
   color: #1c2418;
   font-weight: 600;
   padding: 9px 18px;
   border-radius: 9px;
   font-size: 0.88rem;
+  transition: filter 0.15s ease, transform 0.15s ease;
 }
 .bouton-envoyer:hover { filter: brightness(1.08); }
 .bouton-envoyer:disabled { opacity: 0.5; cursor: default; }
@@ -340,18 +1330,44 @@ body {
 
 @media (max-width: 720px) {
   .app { grid-template-columns: 1fr; }
+
   .panneau-lateral {
-    flex-direction: row;
-    align-items: center;
-    padding: 14px 16px;
-    border-right: none;
-    border-bottom: 1px solid rgba(242,239,226,0.08);
-    height: auto;
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 10;
+    left: 0;
+    height: 100vh;
+    width: min(280px, 85vw);
+    z-index: 90;
+    padding: 22px 18px;
+    border-right: 1px solid rgba(242,239,226,0.1);
+    border-bottom: none;
+    box-shadow: 10px 0 34px rgba(0,0,0,0.45);
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .sous-titre, .modes, .bouton-fantome, .statut { display: none; }
+
+  /* tiroir fermé par défaut sur mobile (piloté en JS) : glisse hors de l'écran
+     au lieu de disparaître d'un coup */
+  .app.menu-cache .panneau-lateral {
+    opacity: 1;
+    transform: translateX(-100%);
+  }
+
+  .fond-tiroir-mobile {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 80;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
+  }
+  .app:not(.menu-cache) .fond-tiroir-mobile {
+    opacity: 1;
+    pointer-events: auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

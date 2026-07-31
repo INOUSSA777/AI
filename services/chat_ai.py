@@ -54,7 +54,32 @@ LANGUES_GTTS = {
 }
 
 
-def chat_response(question: str, historique=None, langue: str = "fr") -> str:
+CONSIGNE_STRUCTURE = (
+    "\n\nINSTRUCTION DE MISE EN FORME OBLIGATOIRE :\n"
+    "Réponds UNIQUEMENT avec un objet JSON valide, sans aucun texte avant ou après, "
+    "sans balises markdown (pas de ```).\n"
+    "Champs TOUJOURS présents :\n"
+    '{"definition": "1 à 2 phrases maximum, jamais plus", '
+    '"explications": ["point clé 1", "point clé 2", "point clé 3 : analogie, intuition ou erreur fréquente si pertinent"], '
+    '"exemples": ["premier exemple concret, détaillé étape par étape si c\'est un calcul", '
+    '"deuxième exemple concret, différent du premier"]}\n\n'
+    "Champs OPTIONNELS, à ajouter UNIQUEMENT quand le sujet s'y prête vraiment (ne pas forcer) :\n"
+    '- "chronologie": [{"date": "...", "evenement": "..."}] si la question est historique\n'
+    '- "langue_info": {"traduction": "...", "prononciation": "...", "pieges": "erreur fréquente à éviter"} '
+    "si la question porte sur une langue étrangère\n"
+    '- "graphique": {"titre": "...", "type": "ligne" ou "barres", '
+    '"points": [{"x": valeur, "y": nombre}, ...]} si une courbe ou un diagramme aiderait vraiment '
+    "à comprendre (sciences, économie, statistiques) — donne de vraies valeurs numériques cohérentes, "
+    "au moins 4 points\n"
+    '- "exemple_burkina": "un exemple concret et réaliste lié au Burkina Faso" si pertinent '
+    "(économie, société, sciences appliquées)\n\n"
+    '"explications" doit être une LISTE de 3 à 5 points clés courts (jamais un paragraphe). '
+    "Utilise du LaTeX entre symboles $ pour toute formule ou calcul mathématique (ex: $f'(a) = 2x$). "
+    'Le tableau "exemples" doit toujours contenir au moins 2 éléments distincts, jamais un seul.'
+)
+
+
+def chat_response(question: str, historique=None, langue: str = "fr", structuree: bool = False) -> str:
     """
     Envoie une question (+ historique optionnel) au modèle et renvoie
     la réponse texte, dans la langue demandée.
@@ -62,12 +87,16 @@ def chat_response(question: str, historique=None, langue: str = "fr") -> str:
     historique : liste de messages précédents au format
                  [{"role": "user"/"assistant", "content": "..."}]
     langue : code de langue ("fr", "en", "moore")
+    structuree : si True, impose le format Définition / Explications / Exemples
+                 (utilisé uniquement par le chat principal, pas par les autres écrans)
     """
     nom_langue = LANGUES.get(langue, LANGUES["fr"])
     consigne_langue = (
         f"\nRéponds impérativement en {nom_langue}, quelle que soit la langue "
         f"utilisée par l'utilisateur dans sa question."
     )
+    if structuree:
+        consigne_langue += CONSIGNE_STRUCTURE
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT + consigne_langue}]
     if historique:
@@ -78,7 +107,7 @@ def chat_response(question: str, historique=None, langue: str = "fr") -> str:
         model=MODEL_TEXTE,
         messages=messages,
         temperature=0.7,
-        max_tokens=600,
+        max_tokens=1100 if structuree else 600,
     )
     return reponse.choices[0].message.content.strip()
 
@@ -139,3 +168,31 @@ def transcrire_audio(audio_bytes: bytes, nom_fichier: str = "audio.webm") -> str
         file=fichier_audio,
     )
     return transcription.text
+
+
+# Limite de caractères conservés d'un PDF importé, pour garder des questions
+# rapides et abordables (le texte complet part quand même en contexte à
+# chaque question posée dessus).
+LIMITE_CARACTERES_PDF = 12000
+
+
+def extraire_texte_pdf(pdf_bytes: bytes) -> tuple[str, bool]:
+    """
+    Extrait le texte d'un PDF. Renvoie (texte, a_ete_tronque).
+    Ne stocke rien sur le serveur : le texte est renvoyé au frontend, qui le
+    garde en mémoire le temps de la session (rien ne persiste après un
+    rechargement de la page).
+    """
+    import io
+
+    from pypdf import PdfReader
+
+    lecteur = PdfReader(io.BytesIO(pdf_bytes))
+    morceaux = []
+    for page in lecteur.pages:
+        texte_page = page.extract_text() or ""
+        morceaux.append(texte_page)
+
+    texte_complet = "\n".join(morceaux).strip()
+    a_ete_tronque = len(texte_complet) > LIMITE_CARACTERES_PDF
+    return texte_complet[:LIMITE_CARACTERES_PDF], a_ete_tronque

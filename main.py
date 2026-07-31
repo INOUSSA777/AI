@@ -20,6 +20,7 @@ from gtts import gTTS
 from pydantic import BaseModel
 
 from services import chat_ai
+from services import auth as auth_service
 
 app = FastAPI(title="INOUS.AI")
 
@@ -35,6 +36,7 @@ class MessageChat(BaseModel):
     question: str
     historique: list[dict] = []
     langue: str = "fr"
+    structuree: bool = False
 
 
 class TexteAParler(BaseModel):
@@ -44,6 +46,22 @@ class TexteAParler(BaseModel):
 
 class PromptImage(BaseModel):
     prompt: str
+
+
+class IdentifiantsCompte(BaseModel):
+    email: str
+    mot_de_passe: str
+
+
+class DemandeReinitialisation(BaseModel):
+    email: str
+    url_retour: str
+
+
+class NouveauMotDePasse(BaseModel):
+    access_token: str
+    refresh_token: str
+    nouveau_mot_de_passe: str
 
 
 @app.get("/api/sante")
@@ -62,7 +80,7 @@ def chat(message: MessageChat):
     if not message.question.strip():
         raise HTTPException(status_code=400, detail="La question est vide.")
     try:
-        reponse = chat_ai.chat_response(message.question, message.historique, message.langue)
+        reponse = chat_ai.chat_response(message.question, message.historique, message.langue, message.structuree)
         return {"reponse": reponse}
     except Exception as erreur:
         raise HTTPException(status_code=500, detail=str(erreur))
@@ -120,6 +138,81 @@ async def transcrire(fichier: UploadFile = File(...)):
         contenu = await fichier.read()
         texte = chat_ai.transcrire_audio(contenu, fichier.filename or "audio.webm")
         return {"texte": texte}
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.post("/api/importer-pdf")
+async def importer_pdf(fichier: UploadFile = File(...)):
+    """
+    Extrait le texte d'un PDF importé (Bibliothèque). Rien n'est sauvegardé
+    côté serveur : le texte est renvoyé au frontend qui le garde en mémoire
+    pour la session en cours uniquement.
+    """
+    try:
+        contenu = await fichier.read()
+        texte, tronque = chat_ai.extraire_texte_pdf(contenu)
+        if not texte.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="Aucun texte n'a pu être extrait (PDF scanné/image sans texte reconnaissable ?).",
+            )
+        return {"texte": texte, "tronque": tronque, "nom": fichier.filename}
+    except HTTPException:
+        raise
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.post("/api/auth/inscription")
+def inscription(donnees: IdentifiantsCompte):
+    try:
+        resultat = auth_service.inscrire(donnees.email, donnees.mot_de_passe)
+        return resultat
+    except Exception as erreur:
+        raise HTTPException(status_code=400, detail=str(erreur))
+
+
+@app.post("/api/auth/connexion")
+def connexion(donnees: IdentifiantsCompte):
+    try:
+        resultat = auth_service.connecter(donnees.email, donnees.mot_de_passe)
+        return resultat
+    except Exception as erreur:
+        raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect.")
+
+
+@app.post("/api/auth/mot-de-passe-oublie")
+def mot_de_passe_oublie(donnees: DemandeReinitialisation):
+    try:
+        auth_service.envoyer_lien_reinitialisation(donnees.email, donnees.url_retour)
+        return {"ok": True}
+    except Exception as erreur:
+        raise HTTPException(status_code=400, detail=str(erreur))
+
+
+@app.post("/api/auth/nouveau-mot-de-passe")
+def nouveau_mot_de_passe(donnees: NouveauMotDePasse):
+    if len(donnees.nouveau_mot_de_passe) < 6:
+        raise HTTPException(status_code=400, detail="Le mot de passe doit faire au moins 6 caractères.")
+    try:
+        auth_service.definir_nouveau_mot_de_passe(
+            donnees.access_token, donnees.refresh_token, donnees.nouveau_mot_de_passe
+        )
+        return {"ok": True}
+    except Exception as erreur:
+        raise HTTPException(status_code=400, detail="Lien invalide ou expiré. Redemande un lien de réinitialisation.")
+
+
+@app.get("/api/profil")
+def profil(authorization: str = ""):
+    """Renvoie le profil réel (points, série) de l'utilisateur connecté."""
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Non connecté.")
+    try:
+        return auth_service.obtenir_profil(utilisateur.id)
     except Exception as erreur:
         raise HTTPException(status_code=500, detail=str(erreur))
 
