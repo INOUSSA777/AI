@@ -9,6 +9,12 @@
   --accent-doux: rgba(232, 183, 92, 0.16);
   --muet: #7c9484;
   --erreur: #d97b6c;
+  --violet: #8b6fd8;
+  --violet-doux: rgba(139, 111, 216, 0.16);
+  --bleu: #5b9bd5;
+  --bleu-doux: rgba(91, 155, 213, 0.16);
+  --vert: #5fbf8a;
+  --vert-doux: rgba(95, 191, 138, 0.16);
 
   --police-affichage: "Fraunces", Georgia, serif;
   --police-corps: "Space Grotesk", -apple-system, sans-serif;
@@ -75,6 +81,13 @@ body {
   grid-template-columns: 0 1fr;
 }
 
+/* invisible et hors de la grille par défaut : ne redevient un vrai fond
+   qu'en version mobile (voir plus bas). Sans ça, cet élément prenait une
+   vraie case de la grille sur ordinateur et décalait tout le reste. */
+.fond-tiroir-mobile {
+  display: none;
+}
+
 .app {
   display: grid;
   grid-template-columns: 260px 1fr;
@@ -95,6 +108,8 @@ body {
   height: 100vh;
   align-self: start;
   overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
   transition: opacity 0.2s ease;
 }
 .app.menu-cache .panneau-lateral {
@@ -112,8 +127,8 @@ body {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 10px 2px var(--accent-doux);
+  background: linear-gradient(135deg, var(--accent), var(--violet));
+  box-shadow: 0 0 12px 2px rgba(139,111,216,0.35);
 }
 
 .entete-marque h1 {
@@ -159,6 +174,13 @@ body {
   font-size: 0.72rem;
   color: var(--muet);
 }
+.mode-btn:nth-of-type(1) .mode-num { color: var(--bleu); }
+.mode-btn:nth-of-type(2) .mode-num { color: var(--vert); }
+.mode-btn:nth-of-type(3) .mode-num { color: var(--violet); }
+.mode-btn:nth-of-type(4) .mode-num { color: var(--violet); }
+.mode-btn:nth-of-type(5) .mode-num { color: var(--vert); }
+.mode-btn:nth-of-type(6) .mode-num { color: var(--bleu); }
+.mode-btn.actif .mode-num { color: var(--accent) !important; }
 
 .mode-btn:hover { background: var(--surface); }
 
@@ -167,7 +189,6 @@ body {
   color: var(--craie);
   border-left: 2px solid var(--accent);
 }
-.mode-btn.actif .mode-num { color: var(--accent); }
 
 .btn-audio-phrase {
   all: unset;
@@ -267,6 +288,10 @@ body {
   margin-top: 14px;
   align-self: flex-start;
 }
+/* chaque parcours guidé a sa propre couleur dominante */
+#formulaire-etude .bouton-guide { background: linear-gradient(120deg, var(--vert), #4a9e6c); color: #0f2417; }
+#formulaire-orientation .bouton-guide { background: linear-gradient(120deg, var(--bleu), #3f7db5); color: #0e2233; }
+#formulaire-jeux .bouton-guide { background: linear-gradient(120deg, var(--violet), #6d54b8); color: #fff; }
 
 .note-avertissement {
   margin-top: 14px;
@@ -787,6 +812,7 @@ body {
 }
 .biblio-question-libre input {
   flex: 1;
+  min-width: 0;
   background: var(--surface);
   border: 1px solid rgba(242,239,226,0.1);
   border-radius: 9px;
@@ -878,16 +904,23 @@ body {
   color: #fff;
   background: linear-gradient(90deg, #d9695f, #c14f57);
 }
+.bloc-explications .bloc-structure-entete {
+  background: linear-gradient(90deg, var(--bleu), #3f7db5) !important;
+}
 .bloc-structure-corps {
   padding: 18px;
   font-size: 0.98rem;
   line-height: 1.65;
 }
 
-.bloc-definition .bloc-structure-corps,
+.bloc-definition .bloc-structure-corps {
+  background: linear-gradient(165deg, rgba(95,191,138,0.20), rgba(95,191,138,0.05));
+  border: 1px solid rgba(95,191,138,0.3);
+  border-top: none;
+}
 .bloc-explications .bloc-structure-corps {
-  background: linear-gradient(165deg, rgba(125,187,138,0.20), rgba(125,187,138,0.05));
-  border: 1px solid rgba(125,187,138,0.3);
+  background: linear-gradient(165deg, rgba(91,155,213,0.20), rgba(91,155,213,0.05));
+  border: 1px solid rgba(91,155,213,0.3);
   border-top: none;
 }
 .bloc-explications ul { margin: 0; padding-left: 20px; }
@@ -1297,6 +1330,7 @@ body {
 
 #entree-texte {
   flex: 1;
+  min-width: 0;
   background: transparent;
   border: none;
   outline: none;
@@ -1329,7 +1363,10 @@ body {
 }
 
 @media (max-width: 720px) {
-  .app { grid-template-columns: 1fr; }
+  .app,
+  .app.menu-cache {
+    grid-template-columns: 1fr;
+  }
 
   .panneau-lateral {
     position: fixed;
@@ -1356,6 +1393,7 @@ body {
   }
 
   .fond-tiroir-mobile {
+    display: block;
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.55);
@@ -1368,6 +1406,38 @@ body {
     opacity: 1;
     pointer-events: auto;
   }
+}
+
+/* ---------- très petits écrans (petits Android, ~320-400px) ---------- */
+@media (max-width: 420px) {
+  .fil-conversation,
+  .ecran-dedie {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .zone-image-active,
+  .actions-rapides,
+  .barre-saisie {
+    margin-left: 14px;
+    margin-right: 14px;
+  }
+  .bulle { max-width: 92%; font-size: 0.92rem; }
+  .reponse-structuree-rangee,
+  .concours-corps,
+  .etude-session,
+  .grille-concours,
+  .grille-actions-biblio,
+  .grille-exercices {
+    grid-template-columns: 1fr !important;
+  }
+  .concours-recherche { min-width: 0; width: 100%; }
+  .concours-entete { flex-direction: column; align-items: stretch; }
+  .actions-message { gap: 5px; }
+  .btn-action-msg { font-size: 0.7rem; padding: 5px 9px; }
+  .panneau-lateral { width: min(240px, 82vw); padding: 18px 14px; }
+  .etude-selecteurs { padding: 12px; }
+  .etude-champ { min-width: 100%; }
+  .modale-compte { padding: 20px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
