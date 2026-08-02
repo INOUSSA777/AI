@@ -391,7 +391,7 @@
 
     <div id="reinit-etape-email">
       <h2>Mot de passe oublié</h2>
-      <p class="guide-desc" style="margin:0 0 4px;">Entre ton email, tu recevras un code à 6 chiffres.</p>
+      <p class="guide-desc" style="margin:0 0 4px;">Entre ton email, tu recevras un code par mail.</p>
       <input type="email" id="reinit-champ-email" placeholder="Adresse email" autocomplete="email">
       <button type="button" class="bouton-envoyer" id="reinit-bouton-envoyer">Envoyer le code</button>
       <p class="compte-message" id="reinit-message"></p>
@@ -399,8 +399,8 @@
 
     <div id="reinit-etape-code" hidden>
       <h2>Entre ton code</h2>
-      <p class="guide-desc" style="margin:0 0 4px;">Vérifie ta boîte mail (et les spams) : un code à 6 chiffres t'a été envoyé.</p>
-      <input type="text" id="reinit-champ-code" placeholder="Code reçu par email" inputmode="numeric" maxlength="6">
+      <p class="guide-desc" style="margin:0 0 4px;">Vérifie ta boîte mail (et les spams) : un code t'a été envoyé.</p>
+      <input type="text" id="reinit-champ-code" placeholder="Code reçu par email" inputmode="numeric" maxlength="12">
       <input type="password" id="reinit-champ-nouveau-mdp" placeholder="Nouveau mot de passe (6 caractères min.)" autocomplete="new-password">
       <button type="button" class="bouton-envoyer" id="reinit-bouton-valider-code">Valider</button>
       <p class="compte-message" id="reinit-code-message"></p>
