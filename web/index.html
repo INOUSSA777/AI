@@ -195,11 +195,31 @@
     <!-- ===== Mode Prépa Concours : écran dédié ===== -->
     <div class="ecran-dedie ecran-concours" id="ecran-concours" hidden>
 
-      <div class="concours-vue-liste" id="concours-vue-liste">
+      <!-- Étape 1 : choix du niveau d'études -->
+      <div class="concours-vue-niveau" id="concours-vue-niveau">
+        <h2 data-i18n="concoursTitre">Préparation concours</h2>
+        <p class="guide-desc">Choisissez d'abord votre niveau d'études</p>
+
+        <div class="grille-niveaux" id="grille-niveaux"></div>
+
+        <div class="carte-recommandation-ia">
+          <h3>🎯 Pas sûr de ton niveau ? Décris ta situation</h3>
+          <p class="guide-desc">Ex : "Je suis en Terminale A2", "J'ai une Licence en économie", "Je veux devenir magistrat"…</p>
+          <div class="recommandation-barre">
+            <input type="text" id="recommandation-texte" placeholder="Décris ta situation…">
+            <button type="button" class="bouton-envoyer" id="btn-recommander">Me recommander des concours</button>
+          </div>
+          <div class="concours-resultat" id="recommandation-resultat" hidden></div>
+        </div>
+      </div>
+
+      <div class="concours-vue-liste" id="concours-vue-liste" hidden>
+        <button type="button" class="bouton-etape-nav" id="btn-changer-niveau">← Changer de niveau</button>
+
         <div class="concours-entete">
           <div>
             <h2 data-i18n="concoursTitre">Préparation concours</h2>
-            <p class="guide-desc" data-i18n="concoursDesc">Prépare-toi efficacement et réussis ton concours</p>
+            <p class="guide-desc" id="concours-niveau-choisi-texte"></p>
           </div>
           <input type="text" id="concours-recherche" class="concours-recherche" placeholder="Rechercher un concours…" data-i18n-placeholder="concoursPlaceholderRecherche">
         </div>

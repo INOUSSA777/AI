@@ -1514,18 +1514,26 @@ function extraireJSONObjet(texteBrut) {
 // SANS dates précises : inventer une date d'examen serait risqué (un élève
 // pourrait s'y fier et rater la vraie échéance officielle).
 const LISTE_CONCOURS = [
-  { nom: "CEPE", organisme: "Certificat d'Études Primaires", icone: "🎓", niveau: "CM2", frequence: "Annuel", categorie: "Éducation" },
-  { nom: "BEPC", organisme: "Brevet d'Études du Premier Cycle", icone: "📘", niveau: "3e", frequence: "Annuel", categorie: "Éducation" },
-  { nom: "BAC", organisme: "Baccalauréat (séries A1, A2, C, D, E)", icone: "🎓", niveau: "Terminale", frequence: "Annuel", categorie: "Éducation" },
-  { nom: "ENAREF", organisme: "École Nationale des Régies Financières", icone: "🏛️", niveau: "Post-BAC", frequence: "Annuel", categorie: "Finances" },
-  { nom: "ENAM", organisme: "École Nationale d'Administration et de Magistrature", icone: "⚖️", niveau: "Licence", frequence: "Annuel", categorie: "Administration" },
-  { nom: "ENS", organisme: "École Normale Supérieure", icone: "📗", niveau: "BAC", frequence: "Annuel", categorie: "Éducation" },
-  { nom: "POLICE", organisme: "Concours Direct Police", icone: "👮", niveau: "BAC", frequence: "Annuel", categorie: "Sécurité" },
-  { nom: "GENDARMERIE", organisme: "Recrutement Gendarmerie", icone: "🎖️", niveau: "BAC", frequence: "Annuel", categorie: "Sécurité" },
-  { nom: "DOUANES", organisme: "Concours Direct Douanes", icone: "🛃", niveau: "BAC", frequence: "Annuel", categorie: "Finances" },
-  { nom: "TRÉSOR", organisme: "Concours Trésor Public", icone: "💰", niveau: "BAC+2/3", frequence: "Irrégulier", categorie: "Finances" },
-  { nom: "MAGISTRATURE", organisme: "Concours Magistrature", icone: "⚖️", niveau: "BAC+4", frequence: "Irrégulier", categorie: "Justice" },
-  { nom: "FONCTION PUBLIQUE", organisme: "Recrutement Fonction Publique", icone: "🏢", niveau: "Divers", frequence: "Variable", categorie: "Administration" },
+  { nom: "CEPE", organisme: "Certificat d'Études Primaires", icone: "🎓", niveau: "CM2", niveauAcces: "BEPC", frequence: "Annuel", categorie: "Éducation" },
+  { nom: "BEPC", organisme: "Brevet d'Études du Premier Cycle", icone: "📘", niveau: "3e", niveauAcces: "BEPC", frequence: "Annuel", categorie: "Éducation" },
+  { nom: "BAC", organisme: "Baccalauréat (séries A1, A2, C, D, E)", icone: "🎓", niveau: "Terminale", niveauAcces: "BAC", frequence: "Annuel", categorie: "Éducation" },
+  { nom: "ENAREF", organisme: "École Nationale des Régies Financières", icone: "🏛️", niveau: "Post-BAC", niveauAcces: "BAC", frequence: "Annuel", categorie: "Finances" },
+  { nom: "ENAM", organisme: "École Nationale d'Administration et de Magistrature", icone: "⚖️", niveau: "Licence", niveauAcces: "Licence", frequence: "Annuel", categorie: "Administration" },
+  { nom: "ENS", organisme: "École Normale Supérieure", icone: "📗", niveau: "BAC", niveauAcces: "BAC", frequence: "Annuel", categorie: "Éducation" },
+  { nom: "POLICE", organisme: "Concours Direct Police", icone: "👮", niveau: "BAC", niveauAcces: "BAC", frequence: "Annuel", categorie: "Sécurité" },
+  { nom: "GENDARMERIE", organisme: "Recrutement Gendarmerie", icone: "🎖️", niveau: "BAC", niveauAcces: "BAC", frequence: "Annuel", categorie: "Sécurité" },
+  { nom: "DOUANES", organisme: "Concours Direct Douanes", icone: "🛃", niveau: "BAC", niveauAcces: "BAC", frequence: "Annuel", categorie: "Finances" },
+  { nom: "TRÉSOR", organisme: "Concours Trésor Public", icone: "💰", niveau: "BAC+2/3", niveauAcces: "Licence", frequence: "Irrégulier", categorie: "Finances" },
+  { nom: "MAGISTRATURE", organisme: "Concours Magistrature", icone: "⚖️", niveau: "BAC+4", niveauAcces: "Master", frequence: "Irrégulier", categorie: "Justice" },
+  { nom: "FONCTION PUBLIQUE", organisme: "Recrutement Fonction Publique", icone: "🏢", niveau: "Divers", niveauAcces: "Professionnels", frequence: "Variable", categorie: "Administration" },
+];
+
+const NIVEAUX_ACCES = [
+  { id: "BEPC", icone: "📘", titre: "Niveau BEPC", description: "Concours accessibles après la classe de 3e" },
+  { id: "BAC", icone: "📙", titre: "Niveau BAC", description: "Concours accessibles après le Baccalauréat" },
+  { id: "Licence", icone: "🎓", titre: "Niveau Licence", description: "Concours accessibles après une Licence" },
+  { id: "Master", icone: "🎓", titre: "Niveau Master", description: "Concours accessibles après un Master" },
+  { id: "Professionnels", icone: "👨‍💼", titre: "Professionnels", description: "Concours internes et professionnels" },
 ];
 
 const CONSEILS_DU_JOUR = [
@@ -1541,15 +1549,56 @@ const concoursRecherche = document.getElementById("concours-recherche");
 const concoursFiltres = document.getElementById("concours-filtres");
 const concoursConseilTexte = document.getElementById("concours-conseil-texte");
 const concoursResultat = document.getElementById("concours-resultat");
+const grilleNiveaux = document.getElementById("grille-niveaux");
+const concoursVueNiveau = document.getElementById("concours-vue-niveau");
+const concoursNiveauChoisiTexte = document.getElementById("concours-niveau-choisi-texte");
 
 let categorieActive = "Tous";
+let niveauActif = null;
+
+function rendreGrilleNiveaux() {
+  grilleNiveaux.innerHTML = NIVEAUX_ACCES.map((n) => {
+    const nombre = LISTE_CONCOURS.filter((c) => c.niveauAcces === n.id).length;
+    return `
+      <button type="button" class="carte-niveau" data-niveau="${n.id}">
+        <span class="niveau-icone">${n.icone}</span>
+        <span class="niveau-titre">${n.titre}</span>
+        <span class="niveau-desc">${n.description}</span>
+        <span class="niveau-compte">${nombre} concours disponible${nombre > 1 ? "s" : ""}</span>
+      </button>`;
+  }).join("");
+
+  grilleNiveaux.querySelectorAll(".carte-niveau").forEach((carte) => {
+    carte.addEventListener("click", () => choisirNiveau(carte.dataset.niveau));
+  });
+}
+rendreGrilleNiveaux();
+
+function choisirNiveau(idNiveau) {
+  niveauActif = idNiveau;
+  const infos = NIVEAUX_ACCES.find((n) => n.id === idNiveau);
+  concoursNiveauChoisiTexte.textContent = `Niveau choisi : ${infos.titre.replace("Niveau ", "")} — ${infos.description}`;
+  concoursVueNiveau.hidden = true;
+  concoursVueListe.hidden = false;
+  categorieActive = "Tous";
+  concoursFiltres.querySelectorAll(".filtre-concours").forEach((b) => b.classList.toggle("actif", b.dataset.categorie === "Tous"));
+  concoursRecherche.value = "";
+  rendreConcours();
+}
+
+document.getElementById("btn-changer-niveau").addEventListener("click", () => {
+  concoursVueListe.hidden = true;
+  concoursVueNiveau.hidden = false;
+  niveauActif = null;
+});
 
 function rendreConcours() {
   const recherche = concoursRecherche.value.trim().toLowerCase();
   const filtres = LISTE_CONCOURS.filter((c) => {
+    const correspondNiveau = !niveauActif || c.niveauAcces === niveauActif;
     const correspondCategorie = categorieActive === "Tous" || c.categorie === categorieActive;
     const correspondRecherche = !recherche || c.nom.toLowerCase().includes(recherche) || c.organisme.toLowerCase().includes(recherche);
-    return correspondCategorie && correspondRecherche;
+    return correspondNiveau && correspondCategorie && correspondRecherche;
   });
 
   grilleConcours.innerHTML = filtres.map((c) => `
@@ -1583,6 +1632,37 @@ concoursFiltres.querySelectorAll(".filtre-concours").forEach((bouton) => {
     categorieActive = bouton.dataset.categorie;
     rendreConcours();
   });
+});
+
+// ---------- assistant de recommandation : décrire sa situation, l'IA filtre ----------
+document.getElementById("btn-recommander").addEventListener("click", async () => {
+  const situation = document.getElementById("recommandation-texte").value.trim();
+  const zoneResultat = document.getElementById("recommandation-resultat");
+  if (!situation) return;
+
+  zoneResultat.hidden = false;
+  zoneResultat.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+
+  const listeTexte = LISTE_CONCOURS.map((c) => `${c.nom} (niveau requis : ${c.niveau}, catégorie : ${c.categorie})`).join(" ; ");
+  const prompt = `Voici la situation d'un utilisateur : "${situation}". ` +
+    `Voici la liste des concours disponibles sur cette plateforme : ${listeTexte}. ` +
+    `Recommande-lui, parmi UNIQUEMENT cette liste, les concours réellement accessibles ou pertinents pour sa situation, et explique pourquoi. ` +
+    `Si aucun de la liste ne correspond bien, dis-le honnêtement. Précise que ce sont des niveaux indicatifs à vérifier officiellement.`;
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: prompt, historique: [], langue: selecteurLangue.value, structuree: true }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+    zoneResultat.innerHTML = construireReponseStructuree(data.reponse);
+    rendreMaths(zoneResultat);
+    lireAudioAutomatique(texteLisibleDepuisReponse(data.reponse));
+  } catch (erreur) {
+    zoneResultat.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
+  }
 });
 
 const concoursVueListe = document.getElementById("concours-vue-liste");

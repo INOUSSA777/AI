@@ -565,6 +565,56 @@ body {
 
 .ecran-concours[hidden] { display: none; }
 
+/* ---------- étape 1 : choix du niveau ---------- */
+.grille-niveaux {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin: 20px 0 28px;
+}
+.carte-niveau {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid rgba(139,111,216,0.2);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+  transition: transform 0.18s ease, border-color 0.18s ease;
+}
+.carte-niveau:hover { transform: translateY(-2px); border-color: var(--violet); }
+.carte-niveau .niveau-icone { font-size: 1.8rem; }
+.carte-niveau .niveau-titre { font-size: 1.05rem; font-weight: 700; color: var(--craie); }
+.carte-niveau .niveau-desc { font-size: 0.8rem; color: var(--muet); line-height: 1.4; }
+.carte-niveau .niveau-compte { font-size: 0.72rem; color: var(--violet); font-family: var(--police-utilitaire); margin-top: 4px; }
+
+.carte-recommandation-ia {
+  background: linear-gradient(135deg, rgba(139,111,216,0.12), rgba(91,155,213,0.08));
+  border: 1px solid rgba(139,111,216,0.3);
+  border-radius: 14px;
+  padding: 20px;
+}
+.carte-recommandation-ia h3 { margin: 0 0 4px; color: var(--craie); font-size: 1rem; }
+.recommandation-barre {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+.recommandation-barre input {
+  flex: 1;
+  min-width: 200px;
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 9px;
+  padding: 10px 12px;
+  color: var(--craie);
+  font-family: var(--police-corps);
+}
+
 .concours-entete {
   display: flex;
   justify-content: space-between;
