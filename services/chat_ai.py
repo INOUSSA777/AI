@@ -86,7 +86,17 @@ CONSIGNE_STRUCTURE = (
 )
 
 
-def chat_response(question: str, historique=None, langue: str = "fr", structuree: bool = False) -> str:
+INSTRUCTIONS_STATUT = {
+    "eleve": "L'utilisateur est un élève. Explique de façon pédagogique, encourageante, adaptée à un niveau scolaire.",
+    "enseignant": "L'utilisateur est un enseignant. Tu peux être plus technique, proposer des pistes pédagogiques, "
+    "des idées d'exercices ou d'évaluation, un langage professionnel de collègue à collègue.",
+    "fonctionnaire": "L'utilisateur est un fonctionnaire ou se prépare à un concours de la fonction publique. "
+    "Adopte un ton formel et professionnel, et oriente vers des applications administratives ou de préparation "
+    "aux concours quand c'est pertinent.",
+}
+
+
+def chat_response(question: str, historique=None, langue: str = "fr", structuree: bool = False, statut: str = "eleve") -> str:
     """
     Envoie une question (+ historique optionnel) au modèle et renvoie
     la réponse texte, dans la langue demandée.
@@ -96,11 +106,13 @@ def chat_response(question: str, historique=None, langue: str = "fr", structuree
     langue : code de langue ("fr", "en", "moore")
     structuree : si True, impose le format Définition / Explications / Exemples
                  (utilisé uniquement par le chat principal, pas par les autres écrans)
+    statut : "eleve" / "enseignant" / "fonctionnaire" — adapte le ton et l'angle de la réponse
     """
     nom_langue = LANGUES.get(langue, LANGUES["fr"])
     consigne_langue = (
         f"\nRéponds impérativement en {nom_langue}, quelle que soit la langue "
         f"utilisée par l'utilisateur dans sa question."
+        f"\n{INSTRUCTIONS_STATUT.get(statut, INSTRUCTIONS_STATUT['eleve'])}"
     )
     if structuree:
         consigne_langue += CONSIGNE_STRUCTURE

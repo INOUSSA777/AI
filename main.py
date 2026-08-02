@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -21,6 +21,7 @@ from pydantic import BaseModel
 
 from services import chat_ai
 from services import auth as auth_service
+from services import bibliotheque as bibliotheque_service
 
 app = FastAPI(title="INOUS.AI")
 
@@ -37,6 +38,7 @@ class MessageChat(BaseModel):
     historique: list[dict] = []
     langue: str = "fr"
     structuree: bool = False
+    statut: str = "eleve"
 
 
 class TexteAParler(BaseModel):
@@ -80,7 +82,7 @@ def chat(message: MessageChat):
     if not message.question.strip():
         raise HTTPException(status_code=400, detail="La question est vide.")
     try:
-        reponse = chat_ai.chat_response(message.question, message.historique, message.langue, message.structuree)
+        reponse = chat_ai.chat_response(message.question, message.historique, message.langue, message.structuree, message.statut)
         return {"reponse": reponse}
     except Exception as erreur:
         raise HTTPException(status_code=500, detail=str(erreur))
@@ -213,6 +215,53 @@ def profil(authorization: str = ""):
         raise HTTPException(status_code=401, detail="Non connecté.")
     try:
         return auth_service.obtenir_profil(utilisateur.id)
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.get("/api/bibliotheque/documents")
+def lister_documents_partages(categorie: str = "Tous"):
+    """Liste publique des documents partagés — pas besoin d'être connecté pour consulter."""
+    try:
+        return bibliotheque_service.lister_documents(categorie)
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.post("/api/bibliotheque/partager")
+async def partager_document(
+    fichier: UploadFile = File(...),
+    nom: str = Form(...),
+    categorie: str = Form(...),
+    authorization: str = "",
+):
+    """Uploader un document dans la bibliothèque partagée — réservé aux utilisateurs connectés."""
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Connecte-toi pour partager un document.")
+    try:
+        contenu = await fichier.read()
+        document = bibliotheque_service.uploader_et_cataloguer(
+            utilisateur.id, nom, categorie, fichier.filename, contenu,
+            fichier.content_type or "application/octet-stream",
+        )
+        return document
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.delete("/api/bibliotheque/documents/{id_document}")
+def retirer_document(id_document: str, authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Non connecté.")
+    try:
+        bibliotheque_service.supprimer_document(id_document, utilisateur.id)
+        return {"ok": True}
+    except PermissionError as erreur:
+        raise HTTPException(status_code=403, detail=str(erreur))
     except Exception as erreur:
         raise HTTPException(status_code=500, detail=str(erreur))
 

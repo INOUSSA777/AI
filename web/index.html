@@ -42,40 +42,48 @@
       </button>
     </nav>
 
-    <div class="bloc-compte" id="bloc-compte">
-      <div id="compte-deconnecte">
-        <button type="button" id="btn-ouvrir-connexion" class="bouton-compte">👤 Se connecter</button>
-      </div>
-      <div id="compte-connecte" hidden>
-        <div class="compte-info">
-          <span id="compte-email"></span>
-          <span id="compte-progres"></span>
+    <button type="button" id="btn-parametres" class="bouton-parametres">
+      <span>⚙️ Paramètres</span>
+      <span class="parametres-chevron">▾</span>
+    </button>
+
+    <div class="panneau-parametres" id="panneau-parametres" hidden>
+
+      <div class="bloc-compte" id="bloc-compte">
+        <div id="compte-deconnecte">
+          <button type="button" id="btn-ouvrir-connexion" class="bouton-compte">👤 Se connecter</button>
         </div>
-        <button type="button" id="btn-deconnexion" class="bouton-fantome">Se déconnecter</button>
+        <div id="compte-connecte" hidden>
+          <div class="compte-info">
+            <span id="compte-email"></span>
+            <span id="compte-progres"></span>
+          </div>
+          <button type="button" id="btn-deconnexion" class="bouton-fantome">Se déconnecter</button>
+        </div>
       </div>
-    </div>
 
-    <div class="bloc-hors-ligne" id="bloc-hors-ligne">
-      <label>📡 Mode hors ligne</label>
-      <p class="hors-ligne-desc">Télécharge une IA légère une fois, utilisable ensuite sans connexion (qualité plus simple).</p>
-      <button type="button" id="btn-preparer-hors-ligne" class="bouton-compte bouton-hors-ligne">📥 Préparer le mode hors ligne</button>
-      <div class="hors-ligne-barre" id="hors-ligne-barre" hidden><div class="hors-ligne-barre-remplie" id="hors-ligne-barre-remplie"></div></div>
-      <p class="hors-ligne-statut" id="hors-ligne-statut"></p>
-    </div>
+      <div class="bloc-hors-ligne" id="bloc-hors-ligne">
+        <label>📡 Mode hors ligne</label>
+        <p class="hors-ligne-desc">Télécharge une IA légère une fois, utilisable ensuite sans connexion (qualité plus simple).</p>
+        <button type="button" id="btn-preparer-hors-ligne" class="bouton-compte bouton-hors-ligne">📥 Préparer le mode hors ligne</button>
+        <div class="hors-ligne-barre" id="hors-ligne-barre" hidden><div class="hors-ligne-barre-remplie" id="hors-ligne-barre-remplie"></div></div>
+        <p class="hors-ligne-statut" id="hors-ligne-statut"></p>
+      </div>
 
-    <div class="bloc-langue">
-      <label for="selecteur-langue" data-i18n="labelLangue">Langue de conversation</label>
-      <select id="selecteur-langue">
-        <option value="fr" selected>Français</option>
-        <option value="en">English</option>
-        <option value="moore">Mooré</option>
-      </select>
-    </div>
+      <div class="bloc-langue">
+        <label for="selecteur-langue" data-i18n="labelLangue">Langue de conversation</label>
+        <select id="selecteur-langue">
+          <option value="fr" selected>Français</option>
+          <option value="en">English</option>
+          <option value="moore">Mooré</option>
+        </select>
+      </div>
 
-    <button id="btn-effacer" class="bouton-fantome" data-i18n="btnEffacer">Effacer la session</button>
+      <button id="btn-effacer" class="bouton-fantome" data-i18n="btnEffacer">Effacer la session</button>
 
-    <div class="statut" id="statut-api">
-      <span class="pastille"></span> <span id="statut-texte" data-i18n="statutVerification">Vérification…</span>
+      <div class="statut" id="statut-api">
+        <span class="pastille"></span> <span id="statut-texte" data-i18n="statutVerification">Vérification…</span>
+      </div>
     </div>
   </aside>
 
@@ -83,6 +91,15 @@
 
     <div class="bandeau-hors-ligne" id="bandeau-hors-ligne" hidden>
       🔌 Pas de connexion — réponses générées localement, plus simples qu'en ligne.
+    </div>
+
+    <div class="bloc-statut-perso" id="bloc-statut-perso">
+      <label for="selecteur-statut">👤</label>
+      <select id="selecteur-statut">
+        <option value="eleve" selected>Élève</option>
+        <option value="enseignant">Enseignant</option>
+        <option value="fonctionnaire">Fonctionnaire</option>
+      </select>
     </div>
 
     <!-- ===== Mode Assistant IA (chat libre) ===== -->
@@ -253,6 +270,39 @@
       <div class="concours-resultat" id="biblio-resultat" hidden></div>
 
       <p class="note-avertissement" data-i18n="biblioNote">ℹ️ Rien n'est sauvegardé sur le serveur : le document reste en mémoire seulement pendant que cette page est ouverte.</p>
+
+      <hr class="biblio-separation">
+
+      <h3 class="biblio-section-titre">📚 Bibliothèque partagée</h3>
+      <p class="guide-desc">Documents déposés par la communauté (cours, fiches, annales) ou du domaine public — à lire ou télécharger librement.</p>
+
+      <div class="biblio-partage-barre">
+        <select id="biblio-filtre-categorie">
+          <option value="Tous">Toutes catégories</option>
+          <option value="Cours">Cours</option>
+          <option value="Fiche">Fiche</option>
+          <option value="Annale">Annale</option>
+          <option value="Roman">Roman</option>
+          <option value="Document">Autre document</option>
+        </select>
+        <button type="button" class="bouton-compte bouton-hors-ligne" id="btn-partager-document">⬆️ Partager un document</button>
+      </div>
+
+      <div class="biblio-partage-formulaire" id="biblio-partage-formulaire" hidden>
+        <input type="text" id="partage-nom" placeholder="Titre du document">
+        <select id="partage-categorie">
+          <option value="Cours">Cours</option>
+          <option value="Fiche">Fiche</option>
+          <option value="Annale">Annale</option>
+          <option value="Roman">Roman (domaine public uniquement)</option>
+          <option value="Document">Autre document</option>
+        </select>
+        <input type="file" id="partage-fichier" accept=".pdf,.doc,.docx,.txt">
+        <button type="button" class="bouton-envoyer" id="btn-valider-partage">Envoyer</button>
+        <p class="note-avertissement">⚠️ Ne partage que des documents dont tu as le droit (tes propres cours/fiches, ou des œuvres du domaine public). Pas de livres ou romans encore protégés par le droit d'auteur.</p>
+      </div>
+
+      <div class="grille-documents" id="grille-documents"></div>
     </div>
 
   </main>

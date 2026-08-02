@@ -10,6 +10,7 @@ const btnEffacer = document.getElementById("btn-effacer");
 const statutEl = document.getElementById("statut-api");
 const statutTexte = document.getElementById("statut-texte");
 const selecteurLangue = document.getElementById("selecteur-langue");
+const selecteurStatut = document.getElementById("selecteur-statut");
 const boutonsModes = document.querySelectorAll(".mode-btn");
 const formulaireEtude = document.getElementById("formulaire-etude");
 const etudeParcours = document.getElementById("etude-parcours");
@@ -345,6 +346,14 @@ function appliquerLangue() {
 }
 
 selecteurLangue.addEventListener("change", appliquerLangue);
+
+// ---------- déplier/replier le panneau Paramètres ----------
+document.getElementById("btn-parametres").addEventListener("click", () => {
+  const panneau = document.getElementById("panneau-parametres");
+  const bouton = document.getElementById("btn-parametres");
+  panneau.hidden = !panneau.hidden;
+  bouton.classList.toggle("parametres-ouverts", !panneau.hidden);
+});
 
 // ---------- replier / déplier le menu latéral ----------
 boutonFermerMenu.addEventListener("click", () => {
@@ -1356,7 +1365,7 @@ async function envoyerTexte(texte, texteAffiche) {
     const res = await fetch("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: texte, historique, langue: selecteurLangue.value, structuree: true }),
+      body: JSON.stringify({ question: texte, historique, langue: selecteurLangue.value, structuree: true, statut: selecteurStatut.value }),
     });
     const data = await res.json();
     bulleChargement.remove();
@@ -1794,6 +1803,106 @@ async function genererQuizDocument() {
     biblioResultat.innerHTML = `<p>⚠️ ${texteTraduit("jeuxErreur")}</p>`;
   }
 }
+
+// ============================================================
+// BIBLIOTHÈQUE PARTAGÉE : documents réels, stockés côté serveur (Supabase),
+// visibles par tout le monde. Upload réservé aux utilisateurs connectés.
+// ============================================================
+const grilleDocuments = document.getElementById("grille-documents");
+const filtreDocuments = document.getElementById("biblio-filtre-categorie");
+const btnPartagerDocument = document.getElementById("btn-partager-document");
+const formulairePartage = document.getElementById("biblio-partage-formulaire");
+const partageNom = document.getElementById("partage-nom");
+const partageCategorie = document.getElementById("partage-categorie");
+const partageFichier = document.getElementById("partage-fichier");
+const btnValiderPartage = document.getElementById("btn-valider-partage");
+
+const LIBELLES_ORIGINE = { utilisateur: "Partagé par un membre", domaine_public: "Domaine public" };
+
+function formaterTaille(octets) {
+  if (!octets) return "";
+  if (octets < 1024 * 1024) return Math.round(octets / 1024) + " Ko";
+  return (octets / (1024 * 1024)).toFixed(1) + " Mo";
+}
+
+async function chargerDocumentsPartages() {
+  grilleDocuments.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+  try {
+    const res = await fetch(`/api/bibliotheque/documents?categorie=${encodeURIComponent(filtreDocuments.value)}`);
+    const documents = await res.json();
+    if (!res.ok) throw new Error(documents.detail || texteTraduit("erreurInconnue"));
+
+    if (!documents.length) {
+      grilleDocuments.innerHTML = `<p class="chargement-guide">Aucun document pour l'instant — sois le premier à en partager un !</p>`;
+      return;
+    }
+
+    grilleDocuments.innerHTML = documents.map((doc) => `
+      <div class="carte-document">
+        <span class="badge-origine ${doc.origine}">${LIBELLES_ORIGINE[doc.origine] || doc.origine}</span>
+        <span class="doc-nom">${echapperHtml(doc.nom)}</span>
+        <span class="doc-meta">${echapperHtml(doc.categorie)} · ${formaterTaille(doc.taille_octets)}</span>
+        <div class="doc-actions">
+          <a href="${doc.url_fichier}" target="_blank" rel="noopener">📖 Lire</a>
+          <a href="${doc.url_fichier}" download="${echapperHtml(doc.nom)}">⬇️ Télécharger</a>
+        </div>
+      </div>
+    `).join("");
+  } catch (erreur) {
+    grilleDocuments.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
+  }
+}
+
+filtreDocuments.addEventListener("change", chargerDocumentsPartages);
+
+btnPartagerDocument.addEventListener("click", () => {
+  if (!localStorage.getItem("inous_jeton")) {
+    grilleDocuments.insertAdjacentHTML("beforebegin", `<p class="note-avertissement">⚠️ Connecte-toi d'abord pour partager un document.</p>`);
+    return;
+  }
+  formulairePartage.hidden = !formulairePartage.hidden;
+});
+
+btnValiderPartage.addEventListener("click", async () => {
+  const nom = partageNom.value.trim();
+  const categorie = partageCategorie.value;
+  const fichier = partageFichier.files[0];
+  const jeton = localStorage.getItem("inous_jeton");
+
+  if (!nom || !fichier) {
+    alert("Ajoute un titre et un fichier avant d'envoyer.");
+    return;
+  }
+  btnValiderPartage.disabled = true;
+  btnValiderPartage.textContent = "Envoi en cours…";
+
+  try {
+    const formData = new FormData();
+    formData.append("fichier", fichier);
+    formData.append("nom", nom);
+    formData.append("categorie", categorie);
+
+    const res = await fetch("/api/bibliotheque/partager", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${jeton}` },
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+
+    partageNom.value = "";
+    partageFichier.value = "";
+    formulairePartage.hidden = true;
+    chargerDocumentsPartages();
+  } catch (erreur) {
+    alert("Erreur : " + erreur.message);
+  } finally {
+    btnValiderPartage.disabled = false;
+    btnValiderPartage.textContent = "Envoyer";
+  }
+});
+
+chargerDocumentsPartages();
 
 // ============================================================
 // COMPTE UTILISATEUR (connexion / inscription réelles via Supabase)

@@ -822,6 +822,91 @@ body {
 }
 .biblio-question-libre[hidden] { display: none; }
 
+/* ---------- bibliothèque partagée ---------- */
+.biblio-separation {
+  border: none;
+  border-top: 1px solid rgba(242,239,226,0.1);
+  margin: 28px 0 20px;
+}
+.biblio-partage-barre {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 14px 0;
+}
+.biblio-partage-barre select {
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 9px;
+  padding: 9px 12px;
+  color: var(--craie);
+  font-family: var(--police-corps);
+}
+.bouton-hors-ligne { width: auto; }
+
+.biblio-partage-formulaire {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid rgba(139,111,216,0.25);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  max-width: 420px;
+}
+.biblio-partage-formulaire[hidden] { display: none; }
+.biblio-partage-formulaire input[type="text"],
+.biblio-partage-formulaire select {
+  background: var(--surface-haute);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 8px;
+  padding: 9px 11px;
+  color: var(--craie);
+  font-family: var(--police-corps);
+}
+.biblio-partage-formulaire input[type="file"] { color: var(--craie-douce); font-size: 0.85rem; }
+
+.grille-documents {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.carte-document {
+  background: var(--surface);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.carte-document .doc-nom { font-size: 0.9rem; color: var(--craie); font-weight: 600; }
+.carte-document .doc-meta { font-size: 0.72rem; color: var(--muet); font-family: var(--police-utilitaire); }
+.carte-document .doc-actions { display: flex; gap: 8px; margin-top: 6px; }
+.carte-document .doc-actions a,
+.carte-document .doc-actions button {
+  all: unset;
+  cursor: pointer;
+  font-size: 0.76rem;
+  padding: 6px 10px;
+  border-radius: 7px;
+  background: var(--surface-haute);
+  color: var(--craie-douce);
+}
+.carte-document .doc-actions a:hover,
+.carte-document .doc-actions button:hover { color: var(--craie); border-color: var(--violet); }
+.badge-origine {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 2px 7px;
+  border-radius: 8px;
+  width: fit-content;
+}
+.badge-origine.utilisateur { background: var(--bleu-doux); color: var(--bleu); }
+.badge-origine.domaine_public { background: var(--vert-doux); color: var(--vert); }
+
 .horodatage-message {
   display: block;
   font-size: 0.68rem;
@@ -1116,6 +1201,27 @@ body {
 }
 
 /* ---------- compte (connexion / inscription) ---------- */
+.bouton-parametres {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 16px;
+  padding: 10px 4px;
+  border-top: 1px solid rgba(242,239,226,0.08);
+  color: var(--craie-douce);
+  font-size: 0.85rem;
+}
+.bouton-parametres:hover { color: var(--craie); }
+.parametres-chevron { transition: transform 0.2s ease; color: var(--violet); }
+.bouton-parametres.parametres-ouverts .parametres-chevron { transform: rotate(180deg); }
+
+.panneau-parametres[hidden] { display: none; }
+.panneau-parametres { padding-top: 4px; }
+
 .bloc-compte {
   margin-top: 16px;
   padding-top: 16px;
@@ -1185,6 +1291,35 @@ body {
   font-size: 0.8rem;
   padding: 8px clamp(20px, 8vw, 140px);
   text-align: center;
+}
+
+.bloc-statut-perso {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--panneau);
+  border: 1px solid rgba(139,111,216,0.3);
+  border-radius: 20px;
+  padding: 5px 10px 5px 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+}
+.bloc-statut-perso select {
+  background: transparent;
+  border: none;
+  color: var(--craie);
+  font-family: var(--police-corps);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.bloc-statut-perso select:focus { outline: none; }
+
+@media (max-width: 420px) {
+  .bloc-statut-perso { top: 8px; right: 8px; padding: 4px 8px; }
+  .bloc-statut-perso select { font-size: 0.72rem; }
 }
 .compte-info {
   display: flex;
