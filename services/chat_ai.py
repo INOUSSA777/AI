@@ -62,7 +62,14 @@ CONSIGNE_STRUCTURE = (
     '{"definition": "1 à 2 phrases maximum, jamais plus", '
     '"explications": ["point clé 1", "point clé 2", "point clé 3 : analogie, intuition ou erreur fréquente si pertinent"], '
     '"exemples": ["premier exemple concret, détaillé étape par étape si c\'est un calcul", '
-    '"deuxième exemple concret, différent du premier"]}\n\n'
+    '"deuxième exemple concret, différent du premier"], '
+    '"anticipations": [{"titre": "court intitulé de 2 à 5 mots", "contenu": "réponse complète à ce sujet connexe"}, '
+    '... (exactement 5 objets au total)]}\n\n'
+    '"anticipations" contient exactement 5 sujets connexes que l\'élève pourrait vouloir approfondir ensuite '
+    "(une notion liée, une question qu'il se poserait naturellement après ta réponse, un point qu'on confond souvent avec celui-ci, "
+    "une application pratique, une variante de l'exercice...). "
+    '"titre" est très court (sert de libellé de bouton), "contenu" est la réponse complète et autonome à ce sujet, '
+    "avec la même qualité qu'une vraie réponse (peut utiliser du LaTeX entre $ si besoin).\n\n"
     "Champs OPTIONNELS, à ajouter UNIQUEMENT quand le sujet s'y prête vraiment (ne pas forcer) :\n"
     '- "chronologie": [{"date": "...", "evenement": "..."}] si la question est historique\n'
     '- "langue_info": {"traduction": "...", "prononciation": "...", "pieges": "erreur fréquente à éviter"} '
@@ -107,7 +114,7 @@ def chat_response(question: str, historique=None, langue: str = "fr", structuree
         model=MODEL_TEXTE,
         messages=messages,
         temperature=0.7,
-        max_tokens=1100 if structuree else 600,
+        max_tokens=1600 if structuree else 600,
     )
     return reponse.choices[0].message.content.strip()
 

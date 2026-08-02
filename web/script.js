@@ -11,33 +11,19 @@ const statutEl = document.getElementById("statut-api");
 const statutTexte = document.getElementById("statut-texte");
 const selecteurLangue = document.getElementById("selecteur-langue");
 const boutonsModes = document.querySelectorAll(".mode-btn");
-const actionsRapides = document.getElementById("actions-rapides");
 const formulaireEtude = document.getElementById("formulaire-etude");
 const etudeParcours = document.getElementById("etude-parcours");
 const etudeMatiere = document.getElementById("etude-matiere");
 const etudeSujet = document.getElementById("etude-sujet");
-const formulaireOrientation = document.getElementById("formulaire-orientation");
-const orientationDiplome = document.getElementById("orientation-diplome");
-const orientationMetier = document.getElementById("orientation-metier");
 const ecranEtude = document.getElementById("ecran-etude");
-const ecranJeux = document.getElementById("ecran-jeux");
-const ecranOrientation = document.getElementById("ecran-orientation");
 const ecranConcours = document.getElementById("ecran-concours");
 const ecranBibliotheque = document.getElementById("ecran-bibliotheque");
-const zoneResultatOrientation = document.getElementById("zone-resultat-orientation");
-const formulaireJeux = document.getElementById("formulaire-jeux");
-const jeuxType = document.getElementById("jeux-type");
-const jeuxNiveau = document.getElementById("jeux-niveau");
-const zoneJeu = document.getElementById("zone-jeu");
 const boutonStopAudio = document.getElementById("bouton-stop-audio");
 const boutonFermerMenu = document.getElementById("bouton-fermer-menu");
 const boutonOuvrirMenu = document.getElementById("bouton-ouvrir-menu");
 const appConteneur = document.querySelector(".app");
 
 let audioActuel = null; // référence vers le son en cours, pour pouvoir le stopper
-let jeuQuestions = [];
-let jeuIndexActuel = 0;
-let jeuScore = 0;
 
 let historique = [];
 let imageSelectionnee = null; // { fichier, dataUrl }
@@ -132,6 +118,7 @@ const TRADUCTIONS = {
     etudePromptModele: "Je suis en {niveau}. Je veux étudier le sujet suivant en {matiere} : {sujet}. Fais une séance complète : 1) une explication claire adaptée à mon niveau, 2) un exemple concret lié au contexte du Burkina Faso, 3) deux ou trois questions pour vérifier ma compréhension, 4) deux exercices à faire. Attends mes réponses avant de me donner la correction. Structure ta réponse avec un retour à la ligne entre chaque idée.",
     orientationPromptModele: "Je viens d'obtenir (ou je prépare) le diplôme suivant : {diplome}. Le métier ou domaine qui m'intéresse est : {metier}. Propose-moi : 1) un parcours recommandé (filières, écoles), 2) les compétences nécessaires, 3) les débouchés possibles, 4) si pertinent, des écoles ou universités au Burkina Faso ou dans la sous-région. Structure ta réponse avec un retour à la ligne entre chaque idée.",
     modeConcours: "Prépa Concours",
+    anticipationsIntro: "Ça pourrait aussi t'intéresser :",
     modeBibliotheque: "Bibliothèque",
     biblioPasDeDocument: "⚠️ Importe d'abord un PDF avant de pouvoir l'utiliser.",
     biblioTitre: "Bibliothèque intelligente",
@@ -383,11 +370,8 @@ if (window.innerWidth <= 720) {
 function masquerTousLesPanneaux() {
   filConversation.hidden = true;
   zoneImageActive.hidden = true;
-  actionsRapides.hidden = true;
   formulaire.hidden = true;
   ecranEtude.hidden = true;
-  ecranJeux.hidden = true;
-  ecranOrientation.hidden = true;
   ecranConcours.hidden = true;
   ecranBibliotheque.hidden = true;
 }
@@ -401,14 +385,9 @@ boutonsModes.forEach((bouton) => {
 
     if (modeActif === "chat") {
       filConversation.hidden = false;
-      actionsRapides.hidden = false;
       formulaire.hidden = false;
     } else if (modeActif === "etude") {
       ecranEtude.hidden = false;
-    } else if (modeActif === "jeux") {
-      ecranJeux.hidden = false;
-    } else if (modeActif === "orientation") {
-      ecranOrientation.hidden = false;
     } else if (modeActif === "concours") {
       ecranConcours.hidden = false;
     } else if (modeActif === "bibliotheque") {
@@ -419,14 +398,6 @@ boutonsModes.forEach((bouton) => {
       appConteneur.classList.add("menu-cache");
       boutonOuvrirMenu.hidden = false;
     }
-  });
-});
-
-// ---------- boutons d'action rapide (mode Assistant IA) ----------
-actionsRapides.querySelectorAll(".pastille-action").forEach((bouton) => {
-  bouton.addEventListener("click", () => {
-    entreeTexte.value = bouton.dataset.modele;
-    entreeTexte.focus();
   });
 });
 
@@ -786,22 +757,6 @@ document.querySelectorAll(".pastille-outil").forEach((bouton) => {
   });
 });
 
-
-
-// ---------- Orientation : construit un prompt structuré ----------
-formulaireOrientation.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const diplome = orientationDiplome.value;
-  const metier = orientationMetier.value.trim();
-  if (!metier) return;
-
-  const prompt = texteTraduit("orientationPromptModele")
-    .replace("{diplome}", diplome)
-    .replace("{metier}", metier);
-
-  demanderALIA(prompt, zoneResultatOrientation);
-});
-
 // ---------- vérification de l'API au chargement ----------
 async function verifierSante() {
   try {
@@ -962,6 +917,61 @@ function construireGraphiqueSVG(graphique) {
 
 // construit les blocs additionnels selon la matière détectée par l'IA
 // (uniquement ceux réellement présents dans la réponse)
+// mémorise le contenu de chaque anticipation, pour l'ouvrir/fermer sans le
+// répéter dans le HTML (comme bibliothequePhrases pour l'audio)
+let bibliothequeAnticipations = [];
+
+function construireAnticipations(anticipations) {
+  if (!Array.isArray(anticipations) || anticipations.length === 0) return "";
+
+  const boutons = anticipations.map((a) => {
+    const index = bibliothequeAnticipations.length;
+    bibliothequeAnticipations.push(a.contenu || "");
+    return `
+      <div class="anticipation" data-index="${index}">
+        <button type="button" class="anticipation-titre">
+          <span>${echapperHtml(a.titre || "")}</span>
+          <span class="anticipation-chevron">▾</span>
+        </button>
+        <div class="anticipation-contenu" hidden></div>
+      </div>`;
+  }).join("");
+
+  return `
+    <div class="bloc-anticipations">
+      <p class="anticipations-intro">${texteTraduit("anticipationsIntro")}</p>
+      ${boutons}
+    </div>`;
+}
+
+// clic délégué : ouvre/ferme une anticipation, en générant son contenu
+// (avec audio + maths) seulement la première fois qu'on l'ouvre
+document.body.addEventListener("click", (e) => {
+  const titreBouton = e.target.closest(".anticipation-titre");
+  if (!titreBouton) return;
+
+  const bloc = titreBouton.closest(".anticipation");
+  const contenuEl = bloc.querySelector(".anticipation-contenu");
+  const dejaOuvert = !contenuEl.hidden;
+
+  // ferme toute autre anticipation ouverte dans le même message (comportement accordéon)
+  bloc.parentElement.querySelectorAll(".anticipation").forEach((autre) => {
+    autre.classList.remove("anticipation-ouverte");
+    autre.querySelector(".anticipation-contenu").hidden = true;
+  });
+
+  if (dejaOuvert) return; // le clic vient de tout refermer, on s'arrête là
+
+  if (!contenuEl.dataset.rempli) {
+    const texteBrut = bibliothequeAnticipations[Number(bloc.dataset.index)];
+    contenuEl.innerHTML = blocTexteAvecAudio(texteBrut);
+    rendreMaths(contenuEl);
+    contenuEl.dataset.rempli = "1";
+  }
+  contenuEl.hidden = false;
+  bloc.classList.add("anticipation-ouverte");
+});
+
 function construireBlocsOptionnels(donnees) {
   let html = "";
 
@@ -1043,6 +1053,7 @@ function construireReponseStructuree(texteReponse) {
         <div class="bloc-structure-corps">${listeAvecAudio(donnees.exemples, "ol")}</div>
       </div>
       ${construireBlocsOptionnels(donnees)}
+      ${construireAnticipations(donnees.anticipations)}
       ${langue === "moore" ? `<span class="note-audio-indisponible">${texteTraduit("audioIndisponibleMoore")}</span>` : ""}
     </div>
   `;
@@ -1319,6 +1330,28 @@ async function envoyerTexte(texte, texteAffiche) {
   entreeTexte.value = "";
   const bulleChargement = ajouterChargement();
 
+  // ---------- mode hors ligne : IA locale, pas de serveur ----------
+  if (!navigator.onLine) {
+    if (!modeleHorsLigneDejaPret()) {
+      bulleChargement.remove();
+      ajouterMessage("assistant", "🔌 Pas de connexion, et le mode hors ligne n'a pas encore été préparé. Reconnecte-toi une fois pour le télécharger (bouton dans le panneau de gauche).");
+      return;
+    }
+    try {
+      const reponseLocale = await repondreHorsLigne(texte, historique);
+      bulleChargement.remove();
+      const divReponse = ajouterMessage("assistant", construireReponseAvecAudio(reponseLocale));
+      revelerProgressivement(divReponse);
+      lireAudioHorsLigne(reponseLocale);
+      historique.push({ role: "user", content: texte });
+      historique.push({ role: "assistant", content: reponseLocale });
+    } catch (erreur) {
+      bulleChargement.remove();
+      ajouterMessage("assistant", `⚠️ ${echapperHtml(erreur.message)}`);
+    }
+    return;
+  }
+
   try {
     const res = await fetch("/api/chat", {
       method: "POST",
@@ -1445,14 +1478,9 @@ creerBoutonMicro(boutonMicro, async (texteUtilisateur) => {
 });
 
 // ============================================================
-// JEUX POUR ENFANTS : quiz généré par l'IA, jouable dans le navigateur
+// Utilitaires JSON réutilisés par Étudier avec moi (quiz, exercices) et le
+// chat principal (réponses structurées)
 // ============================================================
-const LIBELLES_TYPE_JEU = {
-  calcul: "calcul mental (additions, soustractions, adaptées au niveau)",
-  vocabulaire: "vocabulaire (sens des mots, synonymes simples)",
-  culture: "culture générale (animaux, nature, Burkina Faso, sciences simples)",
-};
-
 function extraireJSON(texteBrut) {
   const nettoye = texteBrut.replace(/```json|```/g, "").trim();
   const debut = nettoye.indexOf("[");
@@ -1468,107 +1496,6 @@ function extraireJSONObjet(texteBrut) {
   const fin = nettoye.lastIndexOf("}");
   if (debut === -1 || fin === -1) throw new Error("format inattendu");
   return JSON.parse(nettoye.slice(debut, fin + 1));
-}
-
-formulaireJeux.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const type = jeuxType.value;
-  const niveau = jeuxNiveau.value;
-
-  zoneJeu.hidden = false;
-  zoneJeu.innerHTML = `<p class="chargement-guide">${texteTraduit("jeuxPreparation")}</p>`;
-
-  const prompt =
-    `Tu es un générateur de quiz pour enfants du primaire (niveau ${niveau}, Burkina Faso). ` +
-    `Génère exactement 5 questions de ${LIBELLES_TYPE_JEU[type]}, simples et amusantes, adaptées à ce niveau. ` +
-    `Réponds UNIQUEMENT avec un tableau JSON valide, sans aucun texte avant ni après, sans balises markdown, au format exact : ` +
-    `[{"question": "...", "choix": ["...", "...", "...", "..."], "reponse": 0}]. ` +
-    `"reponse" est l'indice (0 à 3) de la bonne réponse dans "choix".`;
-
-  try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: prompt, historique: [], langue: selecteurLangue.value }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
-
-    jeuQuestions = extraireJSON(data.reponse);
-    if (!Array.isArray(jeuQuestions) || jeuQuestions.length === 0) throw new Error("liste vide");
-
-    jeuIndexActuel = 0;
-    jeuScore = 0;
-    afficherQuestionJeu();
-  } catch {
-    zoneJeu.innerHTML = `
-      <p>⚠️ ${texteTraduit("jeuxErreur")}</p>
-      <button type="button" class="bouton-envoyer bouton-guide" id="bouton-reessayer-jeu">${texteTraduit("jeuxBouton")}</button>
-    `;
-    document.getElementById("bouton-reessayer-jeu").addEventListener("click", () => {
-      formulaireJeux.requestSubmit();
-    });
-  }
-});
-
-function afficherQuestionJeu() {
-  const q = jeuQuestions[jeuIndexActuel];
-  const html = `
-    <div class="carte-question">
-      <div class="jeu-progression">${jeuIndexActuel + 1} / ${jeuQuestions.length}</div>
-      <div class="jeu-question">${echapperHtml(q.question)}</div>
-      <div class="jeu-choix">
-        ${q.choix.map((c, i) => `<button type="button" class="bouton-choix" data-index="${i}">${echapperHtml(c)}</button>`).join("")}
-      </div>
-    </div>
-  `;
-  zoneJeu.innerHTML = html;
-
-  zoneJeu.querySelectorAll(".bouton-choix").forEach((bouton) => {
-    bouton.addEventListener("click", () => {
-      const choisi = Number(bouton.dataset.index);
-      const correct = Number(q.reponse);
-
-      zoneJeu.querySelectorAll(".bouton-choix").forEach((b) => (b.disabled = true));
-      if (choisi === correct) {
-        bouton.classList.add("bonne-reponse");
-        jeuScore++;
-      } else {
-        bouton.classList.add("mauvaise-reponse");
-        zoneJeu.querySelectorAll(".bouton-choix")[correct].classList.add("bonne-reponse");
-      }
-
-      const carte = zoneJeu.querySelector(".carte-question");
-      const boutonSuivant = document.createElement("button");
-      boutonSuivant.type = "button";
-      boutonSuivant.className = "bouton-envoyer jeu-suivant";
-      boutonSuivant.textContent = jeuIndexActuel + 1 < jeuQuestions.length
-        ? texteTraduit("jeuxSuivant")
-        : texteTraduit("jeuxTermine");
-      boutonSuivant.addEventListener("click", () => {
-        jeuIndexActuel++;
-        if (jeuIndexActuel < jeuQuestions.length) {
-          afficherQuestionJeu();
-        } else {
-          afficherScoreFinalJeu();
-        }
-      });
-      carte.appendChild(boutonSuivant);
-    });
-  });
-}
-
-function afficherScoreFinalJeu() {
-  zoneJeu.innerHTML = `
-    <div class="carte-question jeu-score">
-      🎉 ${texteTraduit("jeuxScoreTexte").replace("{score}", jeuScore).replace("{total}", jeuQuestions.length)}
-      <br><br>
-      <button type="button" class="bouton-envoyer bouton-guide" id="bouton-rejouer">${texteTraduit("jeuxRejouer")}</button>
-    </div>
-  `;
-  document.getElementById("bouton-rejouer").addEventListener("click", () => {
-    zoneJeu.hidden = true;
-  });
 }
 
 // ============================================================
@@ -1966,6 +1893,111 @@ async function appliquerEtatConnexion() {
 }
 appliquerEtatConnexion();
 
+// ============================================================
+// MODE HORS LIGNE : petite IA locale dans le navigateur (WebLLM),
+// zéro serveur impliqué une fois téléchargée. Fonctionne uniquement si le
+// téléphone/ordinateur supporte WebGPU — sinon, message clair plutôt qu'un
+// plantage silencieux.
+// ============================================================
+const MODELE_HORS_LIGNE = "Qwen2.5-0.5B-Instruct-q4f16_1-MLC"; // ~400 Mo, le plus léger disponible
+
+let moteurHorsLigne = null;
+let webllmModule = null;
+
+const btnPreparerHorsLigne = document.getElementById("btn-preparer-hors-ligne");
+const horsLigneBarre = document.getElementById("hors-ligne-barre");
+const horsLigneBarreRemplie = document.getElementById("hors-ligne-barre-remplie");
+const horsLigneStatut = document.getElementById("hors-ligne-statut");
+const bandeauHorsLigne = document.getElementById("bandeau-hors-ligne");
+
+function modeleHorsLigneDejaPret() {
+  return localStorage.getItem("inous_hors_ligne_pret") === "1";
+}
+
+if (modeleHorsLigneDejaPret()) {
+  horsLigneStatut.textContent = "✅ Prêt à être utilisé hors connexion.";
+  btnPreparerHorsLigne.textContent = "🔁 Re-télécharger le modèle";
+}
+
+btnPreparerHorsLigne.addEventListener("click", async () => {
+  if (!navigator.onLine) {
+    horsLigneStatut.textContent = "⚠️ Connecte-toi à internet au moins une fois pour préparer le mode hors ligne.";
+    return;
+  }
+  btnPreparerHorsLigne.disabled = true;
+  horsLigneBarre.hidden = false;
+  horsLigneStatut.textContent = "Vérification de la compatibilité…";
+
+  try {
+    if (!navigator.gpu) {
+      throw new Error("Cet appareil/navigateur ne supporte pas WebGPU — le mode hors ligne n'est pas disponible ici.");
+    }
+
+    horsLigneStatut.textContent = "Téléchargement du modèle (environ 400 Mo)…";
+    if (!webllmModule) {
+      webllmModule = await import("https://esm.run/@mlc-ai/web-llm");
+    }
+
+    moteurHorsLigne = await webllmModule.CreateMLCEngine(MODELE_HORS_LIGNE, {
+      initProgressCallback: (rapport) => {
+        const pourcentage = Math.round((rapport.progress || 0) * 100);
+        horsLigneBarreRemplie.style.width = pourcentage + "%";
+        horsLigneStatut.textContent = `Téléchargement… ${pourcentage}%`;
+      },
+    });
+
+    localStorage.setItem("inous_hors_ligne_pret", "1");
+    horsLigneStatut.textContent = "✅ Prêt ! Tu peux maintenant utiliser le chat sans connexion.";
+    btnPreparerHorsLigne.textContent = "🔁 Re-télécharger le modèle";
+  } catch (erreur) {
+    horsLigneStatut.textContent = `⚠️ ${erreur.message}`;
+    localStorage.removeItem("inous_hors_ligne_pret");
+  } finally {
+    btnPreparerHorsLigne.disabled = false;
+  }
+});
+
+// charge le moteur en mémoire si besoin (au cas où la page vient d'être
+// rechargée hors ligne, après une préparation faite lors d'une session précédente)
+async function garantirMoteurHorsLigneCharge() {
+  if (moteurHorsLigne) return moteurHorsLigne;
+  if (!webllmModule) {
+    webllmModule = await import("https://esm.run/@mlc-ai/web-llm");
+  }
+  moteurHorsLigne = await webllmModule.CreateMLCEngine(MODELE_HORS_LIGNE);
+  return moteurHorsLigne;
+}
+
+async function repondreHorsLigne(question, historiqueRecent) {
+  const moteur = await garantirMoteurHorsLigneCharge();
+  const messages = [
+    {
+      role: "system",
+      content: "Tu es INOUS.AI, un assistant éducatif. Réponds simplement, clairement et brièvement, en français, sans mise en forme spéciale (pas de JSON, pas de balises).",
+    },
+    ...historiqueRecent.slice(-6), // contexte réduit : petit modèle, mémoire limitée
+    { role: "user", content: question },
+  ];
+  const reponse = await moteur.chat.completions.create({ messages });
+  return reponse.choices[0].message.content;
+}
+
+// synthèse vocale hors ligne : l'API du navigateur (aucun serveur nécessaire)
+function lireAudioHorsLigne(texte) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const enonce = new SpeechSynthesisUtterance(texte);
+  enonce.lang = selecteurLangue.value === "en" ? "en-US" : "fr-FR";
+  window.speechSynthesis.speak(enonce);
+}
+
+function mettreAJourBandeauConnexion() {
+  bandeauHorsLigne.hidden = navigator.onLine;
+}
+window.addEventListener("online", mettreAJourBandeauConnexion);
+window.addEventListener("offline", mettreAJourBandeauConnexion);
+mettreAJourBandeauConnexion();
+
 // ---------- mot de passe oublié ----------
 const fondModaleReinit = document.getElementById("fond-modale-reinit");
 const reinitChampEmail = document.getElementById("reinit-champ-email");
@@ -2053,6 +2085,7 @@ if (jetonsRecuperation) {
 btnEffacer.addEventListener("click", () => {
   historique = [];
   bibliothequePhrases = [];
+  bibliothequeAnticipations = [];
   filConversation.innerHTML = "";
   ajouterMessage("assistant", texteTraduit("sessionEffacee"));
 });

@@ -40,12 +40,6 @@
       <button class="mode-btn" data-mode="bibliotheque">
         <span class="mode-num">04</span> 📖 <span data-i18n="modeBibliotheque">Bibliothèque</span>
       </button>
-      <button class="mode-btn" data-mode="jeux">
-        <span class="mode-num">05</span> 🎮 <span data-i18n="modeJeux">Jeux pour enfants</span>
-      </button>
-      <button class="mode-btn" data-mode="orientation">
-        <span class="mode-num">06</span> 💼 <span data-i18n="modeOrientation">Orientation</span>
-      </button>
     </nav>
 
     <div class="bloc-compte" id="bloc-compte">
@@ -59,6 +53,14 @@
         </div>
         <button type="button" id="btn-deconnexion" class="bouton-fantome">Se déconnecter</button>
       </div>
+    </div>
+
+    <div class="bloc-hors-ligne" id="bloc-hors-ligne">
+      <label>📡 Mode hors ligne</label>
+      <p class="hors-ligne-desc">Télécharge une IA légère une fois, utilisable ensuite sans connexion (qualité plus simple).</p>
+      <button type="button" id="btn-preparer-hors-ligne" class="bouton-compte bouton-hors-ligne">📥 Préparer le mode hors ligne</button>
+      <div class="hors-ligne-barre" id="hors-ligne-barre" hidden><div class="hors-ligne-barre-remplie" id="hors-ligne-barre-remplie"></div></div>
+      <p class="hors-ligne-statut" id="hors-ligne-statut"></p>
     </div>
 
     <div class="bloc-langue">
@@ -79,6 +81,10 @@
 
   <main class="zone-chat">
 
+    <div class="bandeau-hors-ligne" id="bandeau-hors-ligne" hidden>
+      🔌 Pas de connexion — réponses générées localement, plus simples qu'en ligne.
+    </div>
+
     <!-- ===== Mode Assistant IA (chat libre) ===== -->
     <div id="fil-conversation" class="fil-conversation">
       <div class="message message-ia">
@@ -92,16 +98,6 @@
     <div class="zone-image-active" id="zone-image-active" hidden>
       <img id="apercu-image" alt="Aperçu de l'image">
       <button id="retirer-image">✕</button>
-    </div>
-
-    <div class="actions-rapides" id="actions-rapides">
-      <button type="button" class="pastille-action" data-modele="Explique-moi : " data-i18n="actionExpliquer">Expliquer</button>
-      <button type="button" class="pastille-action" data-modele="Résume ce texte : " data-i18n="actionResumer">Résumer</button>
-      <button type="button" class="pastille-action" data-modele="Interroge-moi sur : " data-i18n="actionInterroger">Interroge-moi</button>
-      <button type="button" class="pastille-action" data-modele="Crée un exercice sur : " data-i18n="actionExercice">Crée un exercice</button>
-      <button type="button" class="pastille-action" data-modele="Corrige ce devoir : " data-i18n="actionCorriger">Corrige mon devoir</button>
-      <button type="button" class="pastille-action" data-modele="Explique-moi autrement, plus simplement : " data-i18n="actionAutrement">Explique autrement</button>
-      <button type="button" class="pastille-action" data-modele="Donne-moi un exemple lié au Burkina Faso pour : " data-i18n="actionExemple">Exemple burkinabè</button>
     </div>
 
     <form id="formulaire-saisie" class="barre-saisie">
@@ -257,59 +253,6 @@
       <div class="concours-resultat" id="biblio-resultat" hidden></div>
 
       <p class="note-avertissement" data-i18n="biblioNote">ℹ️ Rien n'est sauvegardé sur le serveur : le document reste en mémoire seulement pendant que cette page est ouverte.</p>
-    </div>
-
-    <!-- ===== Mode Jeux pour enfants : écran dédié ===== -->
-    <div class="ecran-dedie" id="ecran-jeux" hidden>
-      <form id="formulaire-jeux" class="panneau-guide">
-        <h2 data-i18n="jeuxTitre">Jeux pour enfants</h2>
-        <p class="guide-desc" data-i18n="jeuxDesc">Des petits quiz amusants générés par l'IA pour s'entraîner en s'amusant.</p>
-
-        <label data-i18n="jeuxLabelType">Type de jeu</label>
-        <select id="jeux-type">
-          <option value="calcul" data-i18n="jeuxTypeCalcul">🔢 Quiz de calcul</option>
-          <option value="vocabulaire" data-i18n="jeuxTypeVocabulaire">📖 Quiz de vocabulaire</option>
-          <option value="culture" data-i18n="jeuxTypeCulture">🌍 Quiz de culture générale</option>
-        </select>
-
-        <label data-i18n="jeuxLabelNiveau">Niveau</label>
-        <select id="jeux-niveau">
-          <option value="CP">CP</option>
-          <option value="CE1">CE1</option>
-          <option value="CE2" selected>CE2</option>
-          <option value="CM1">CM1</option>
-          <option value="CM2">CM2</option>
-        </select>
-
-        <button type="submit" class="bouton-envoyer bouton-guide" data-i18n="jeuxBouton">Commencer à jouer</button>
-      </form>
-      <div class="zone-jeu" id="zone-jeu" hidden></div>
-    </div>
-
-    <!-- ===== Mode Orientation : écran dédié ===== -->
-    <div class="ecran-dedie" id="ecran-orientation" hidden>
-      <form id="formulaire-orientation" class="panneau-guide">
-        <h2 data-i18n="orientationTitre">Orientation</h2>
-        <p class="guide-desc" data-i18n="orientationDesc">Décris ta situation, INOUS.AI te propose un parcours indicatif.</p>
-
-        <label data-i18n="orientationLabelDiplome">Dernier diplôme obtenu (ou en préparation)</label>
-        <select id="orientation-diplome">
-          <option value="CEP" data-i18n="diplomeCEP">CEP</option>
-          <option value="BEPC" selected data-i18n="diplomeBEPC">BEPC</option>
-          <option value="Baccalauréat" data-i18n="diplomeBac">Baccalauréat</option>
-          <option value="Licence" data-i18n="diplomeLicence">Licence</option>
-        </select>
-
-        <label data-i18n="orientationLabelMetier">Métier ou domaine qui t'intéresse</label>
-        <input type="text" id="orientation-metier" placeholder="Ex : médecine, informatique, enseignement…" data-i18n-placeholder="orientationPlaceholderMetier">
-
-        <button type="submit" class="bouton-envoyer bouton-guide" data-i18n="orientationBouton">Obtenir mon parcours</button>
-
-        <p class="note-avertissement" data-i18n="orientationAvertissement">
-          ℹ️ Les informations sur les écoles, admissions et salaires sont générées par l'IA à titre indicatif — vérifie toujours auprès des établissements officiels.
-        </p>
-      </form>
-      <div class="zone-resultat-guide" id="zone-resultat-orientation" hidden></div>
     </div>
 
   </main>

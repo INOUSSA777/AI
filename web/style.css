@@ -946,6 +946,54 @@ body {
 .bloc-optionnel p { margin: 0 0 8px; }
 .bloc-optionnel p:last-child { margin-bottom: 0; }
 
+/* ---------- accordéon des 5 réponses anticipées ---------- */
+.bloc-anticipations {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+.anticipations-intro {
+  font-size: 0.8rem;
+  color: var(--muet);
+  margin: 0 0 2px;
+}
+.anticipation {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(139,111,216,0.25);
+  background: var(--surface);
+}
+.anticipation-titre {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 11px 14px;
+  font-size: 0.88rem;
+  color: var(--craie-douce);
+  box-sizing: border-box;
+}
+.anticipation-titre:hover { background: var(--violet-doux); color: var(--craie); }
+.anticipation-ouverte .anticipation-titre { background: var(--violet-doux); color: var(--craie); }
+.anticipation-chevron {
+  color: var(--violet);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+.anticipation-ouverte .anticipation-chevron { transform: rotate(180deg); }
+.anticipation-contenu {
+  padding: 0 14px 14px;
+  padding-top: 12px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  border-top: 1px solid rgba(139,111,216,0.15);
+}
+.anticipation-contenu[hidden] { display: none; }
+
 .liste-chronologie { margin: 0; padding-left: 18px; }
 .liste-chronologie li { margin-bottom: 8px; }
 
@@ -1077,6 +1125,7 @@ body {
   all: unset;
   cursor: pointer;
   width: 100%;
+  box-sizing: border-box;
   text-align: center;
   padding: 9px;
   border-radius: 9px;
@@ -1084,6 +1133,58 @@ body {
   color: #1c2418;
   font-weight: 600;
   font-size: 0.85rem;
+}
+
+/* ---------- mode hors ligne ---------- */
+.bloc-hors-ligne {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(242,239,226,0.08);
+}
+.bloc-hors-ligne label {
+  display: block;
+  font-size: 0.72rem;
+  font-family: var(--police-utilitaire);
+  color: var(--muet);
+  margin-bottom: 6px;
+}
+.hors-ligne-desc {
+  font-size: 0.74rem;
+  color: var(--muet);
+  line-height: 1.4;
+  margin: 0 0 10px;
+}
+.bouton-hors-ligne {
+  background: var(--bleu);
+  color: #0e2233;
+}
+.bouton-hors-ligne:disabled { opacity: 0.6; cursor: default; }
+.hors-ligne-barre {
+  height: 6px;
+  background: var(--surface-haute);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+.hors-ligne-barre-remplie {
+  height: 100%;
+  width: 0%;
+  background: var(--bleu);
+  transition: width 0.2s ease;
+}
+.hors-ligne-statut {
+  font-size: 0.74rem;
+  color: var(--muet);
+  margin: 8px 0 0;
+}
+
+.bandeau-hors-ligne {
+  background: linear-gradient(90deg, rgba(217,123,108,0.22), rgba(217,123,108,0.08));
+  border-bottom: 1px solid rgba(217,123,108,0.35);
+  color: #f0c9c2;
+  font-size: 0.8rem;
+  padding: 8px clamp(20px, 8vw, 140px);
+  text-align: center;
 }
 .compte-info {
   display: flex;
