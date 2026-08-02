@@ -1571,7 +1571,7 @@ function rendreConcours() {
   `).join("") || `<p class="chargement-guide">Aucun concours ne correspond à ta recherche.</p>`;
 
   grilleConcours.querySelectorAll(".bouton-se-preparer").forEach((bouton) => {
-    bouton.addEventListener("click", () => genererPreparationConcours(bouton.dataset.nom));
+    bouton.addEventListener("click", () => ouvrirPageConcours(bouton.dataset.nom));
   });
 }
 
@@ -1585,10 +1585,118 @@ concoursFiltres.querySelectorAll(".filtre-concours").forEach((bouton) => {
   });
 });
 
+const concoursVueListe = document.getElementById("concours-vue-liste");
+const concoursVueDetail = document.getElementById("concours-vue-detail");
+const concoursResultatDetail = document.getElementById("concours-resultat-detail");
+const grilleDocumentsConcours = document.getElementById("grille-documents-concours");
+const btnPartagerPourConcours = document.getElementById("btn-partager-pour-concours");
+const formulairePartageConcours = document.getElementById("formulaire-partage-concours");
+const partageConcoursNom = document.getElementById("partage-concours-nom");
+const partageConcoursCategorie = document.getElementById("partage-concours-categorie");
+const partageConcoursFichier = document.getElementById("partage-concours-fichier");
+const btnValiderPartageConcours = document.getElementById("btn-valider-partage-concours");
+
+let concoursActuel = null;
+
+async function ouvrirPageConcours(nomConcours) {
+  const infos = LISTE_CONCOURS.find((c) => c.nom === nomConcours);
+  concoursActuel = nomConcours;
+
+  concoursVueListe.hidden = true;
+  concoursVueDetail.hidden = false;
+  document.getElementById("detail-concours-icone").textContent = infos.icone;
+  document.getElementById("detail-concours-nom").textContent = infos.nom;
+  document.getElementById("detail-concours-organisme").textContent = infos.organisme;
+  formulairePartageConcours.hidden = true;
+
+  await genererPreparationConcours(nomConcours);
+  await chargerDocumentsPourConcours(nomConcours);
+}
+
+document.getElementById("btn-retour-concours").addEventListener("click", () => {
+  concoursVueDetail.hidden = true;
+  concoursVueListe.hidden = false;
+  concoursActuel = null;
+});
+
+async function chargerDocumentsPourConcours(nomConcours) {
+  grilleDocumentsConcours.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+  try {
+    const res = await fetch(`/api/bibliotheque/documents?concours=${encodeURIComponent(nomConcours)}`);
+    const documents = await res.json();
+    if (!res.ok) throw new Error(documents.detail || texteTraduit("erreurInconnue"));
+
+    if (!documents.length) {
+      grilleDocumentsConcours.innerHTML = `<p class="chargement-guide">Aucun document partagé pour ce concours pour l'instant — sois le premier !</p>`;
+      return;
+    }
+    grilleDocumentsConcours.innerHTML = documents.map((doc) => `
+      <div class="carte-document">
+        <span class="badge-origine ${doc.origine}">${LIBELLES_ORIGINE[doc.origine] || doc.origine}</span>
+        <span class="doc-nom">${echapperHtml(doc.nom)}</span>
+        <span class="doc-meta">${echapperHtml(doc.categorie)} · ${formaterTaille(doc.taille_octets)}</span>
+        <div class="doc-actions">
+          <a href="${doc.url_fichier}" target="_blank" rel="noopener">📖 Lire</a>
+          <a href="${doc.url_fichier}" download="${echapperHtml(doc.nom)}">⬇️ Télécharger</a>
+        </div>
+      </div>
+    `).join("");
+  } catch (erreur) {
+    grilleDocumentsConcours.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
+  }
+}
+
+btnPartagerPourConcours.addEventListener("click", () => {
+  if (!localStorage.getItem("inous_jeton")) {
+    alert("Connecte-toi d'abord pour partager un document.");
+    return;
+  }
+  formulairePartageConcours.hidden = !formulairePartageConcours.hidden;
+});
+
+btnValiderPartageConcours.addEventListener("click", async () => {
+  const nom = partageConcoursNom.value.trim();
+  const categorie = partageConcoursCategorie.value;
+  const fichier = partageConcoursFichier.files[0];
+  const jeton = localStorage.getItem("inous_jeton");
+
+  if (!nom || !fichier) {
+    alert("Ajoute un titre et un fichier avant d'envoyer.");
+    return;
+  }
+  btnValiderPartageConcours.disabled = true;
+  btnValiderPartageConcours.textContent = "Envoi en cours…";
+
+  try {
+    const formData = new FormData();
+    formData.append("fichier", fichier);
+    formData.append("nom", nom);
+    formData.append("categorie", categorie);
+    formData.append("concours", concoursActuel);
+
+    const res = await fetch("/api/bibliotheque/partager", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${jeton}` },
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+
+    partageConcoursNom.value = "";
+    partageConcoursFichier.value = "";
+    formulairePartageConcours.hidden = true;
+    chargerDocumentsPourConcours(concoursActuel);
+  } catch (erreur) {
+    alert("Erreur : " + erreur.message);
+  } finally {
+    btnValiderPartageConcours.disabled = false;
+    btnValiderPartageConcours.textContent = "Envoyer";
+  }
+});
+
 async function genererPreparationConcours(nomConcours) {
-  concoursResultat.hidden = false;
-  concoursResultat.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
-  concoursResultat.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  concoursResultatDetail.hidden = false;
+  concoursResultatDetail.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
 
   const infos = LISTE_CONCOURS.find((c) => c.nom === nomConcours);
   const prompt = `Prépare un guide de préparation général pour le concours "${nomConcours}" (${infos.organisme}, niveau ${infos.niveau}, Burkina Faso) : ` +
@@ -1604,11 +1712,11 @@ async function genererPreparationConcours(nomConcours) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
-    concoursResultat.innerHTML = construireReponseStructuree(data.reponse);
-    rendreMaths(concoursResultat);
+    concoursResultatDetail.innerHTML = construireReponseStructuree(data.reponse);
+    rendreMaths(concoursResultatDetail);
     lireAudioAutomatique(texteLisibleDepuisReponse(data.reponse));
   } catch (erreur) {
-    concoursResultat.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
+    concoursResultatDetail.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
   }
 }
 

@@ -195,45 +195,82 @@
     <!-- ===== Mode Prépa Concours : écran dédié ===== -->
     <div class="ecran-dedie ecran-concours" id="ecran-concours" hidden>
 
-      <div class="concours-entete">
-        <div>
-          <h2 data-i18n="concoursTitre">Préparation concours</h2>
-          <p class="guide-desc" data-i18n="concoursDesc">Prépare-toi efficacement et réussis ton concours</p>
-        </div>
-        <input type="text" id="concours-recherche" class="concours-recherche" placeholder="Rechercher un concours…" data-i18n-placeholder="concoursPlaceholderRecherche">
-      </div>
-
-      <div class="concours-filtres" id="concours-filtres">
-        <button type="button" class="filtre-concours actif" data-categorie="Tous">Tous</button>
-        <button type="button" class="filtre-concours" data-categorie="Éducation">Éducation</button>
-        <button type="button" class="filtre-concours" data-categorie="Administration">Administration</button>
-        <button type="button" class="filtre-concours" data-categorie="Sécurité">Sécurité</button>
-        <button type="button" class="filtre-concours" data-categorie="Finances">Finances</button>
-        <button type="button" class="filtre-concours" data-categorie="Justice">Justice</button>
-      </div>
-
-      <div class="concours-corps">
-        <div class="concours-principal">
-          <h3 data-i18n="concoursPopulaires">Concours nationaux</h3>
-          <div class="grille-concours" id="grille-concours"></div>
+      <div class="concours-vue-liste" id="concours-vue-liste">
+        <div class="concours-entete">
+          <div>
+            <h2 data-i18n="concoursTitre">Préparation concours</h2>
+            <p class="guide-desc" data-i18n="concoursDesc">Prépare-toi efficacement et réussis ton concours</p>
+          </div>
+          <input type="text" id="concours-recherche" class="concours-recherche" placeholder="Rechercher un concours…" data-i18n-placeholder="concoursPlaceholderRecherche">
         </div>
 
-        <aside class="concours-aside">
-          <div class="carte-aside carte-conseils">
-            <h3>💡 <span data-i18n="concoursConseilsTitre">Conseil du jour</span></h3>
-            <p id="concours-conseil-texte"></p>
+        <div class="concours-filtres" id="concours-filtres">
+          <button type="button" class="filtre-concours actif" data-categorie="Tous">Tous</button>
+          <button type="button" class="filtre-concours" data-categorie="Éducation">Éducation</button>
+          <button type="button" class="filtre-concours" data-categorie="Administration">Administration</button>
+          <button type="button" class="filtre-concours" data-categorie="Sécurité">Sécurité</button>
+          <button type="button" class="filtre-concours" data-categorie="Finances">Finances</button>
+          <button type="button" class="filtre-concours" data-categorie="Justice">Justice</button>
+        </div>
+
+        <div class="concours-corps">
+          <div class="concours-principal">
+            <h3 data-i18n="concoursPopulaires">Concours nationaux</h3>
+            <div class="grille-concours" id="grille-concours"></div>
           </div>
 
-          <div class="carte-aside">
-            <h3 data-i18n="concoursAccesRapide">Accès rapide</h3>
-            <button type="button" class="acces-rapide-btn" data-outil="fiches">📄 <span data-i18n="concoursFiches">Fiches de révision</span></button>
-            <button type="button" class="acces-rapide-btn" data-outil="qcm">❓ <span data-i18n="concoursQcm">QCM d'entraînement</span></button>
-            <button type="button" class="acces-rapide-btn" data-outil="annales">📚 <span data-i18n="concoursAnnales">Sujets & Annales</span></button>
-          </div>
-        </aside>
+          <aside class="concours-aside">
+            <div class="carte-aside carte-conseils">
+              <h3>💡 <span data-i18n="concoursConseilsTitre">Conseil du jour</span></h3>
+              <p id="concours-conseil-texte"></p>
+            </div>
+
+            <div class="carte-aside">
+              <h3 data-i18n="concoursAccesRapide">Accès rapide</h3>
+              <button type="button" class="acces-rapide-btn" data-outil="fiches">📄 <span data-i18n="concoursFiches">Fiches de révision</span></button>
+              <button type="button" class="acces-rapide-btn" data-outil="qcm">❓ <span data-i18n="concoursQcm">QCM d'entraînement</span></button>
+              <button type="button" class="acces-rapide-btn" data-outil="annales">📚 <span data-i18n="concoursAnnales">Sujets & Annales</span></button>
+            </div>
+          </aside>
+        </div>
+
+        <div class="concours-resultat" id="concours-resultat" hidden></div>
       </div>
 
-      <div class="concours-resultat" id="concours-resultat" hidden></div>
+      <!-- ===== Page dédiée à UN concours précis ===== -->
+      <div class="concours-vue-detail" id="concours-vue-detail" hidden>
+        <button type="button" class="bouton-etape-nav" id="btn-retour-concours">← Retour à tous les concours</button>
+
+        <div class="concours-detail-entete">
+          <div class="carte-concours-icone" id="detail-concours-icone"></div>
+          <div>
+            <h2 id="detail-concours-nom"></h2>
+            <p class="guide-desc" id="detail-concours-organisme"></p>
+          </div>
+        </div>
+
+        <div class="concours-resultat" id="concours-resultat-detail"></div>
+
+        <h3 class="biblio-section-titre">📄 Sujets & documents partagés pour ce concours</h3>
+        <p class="guide-desc">Annales, fiches et cours partagés par la communauté pour ce concours précis.</p>
+        <button type="button" class="bouton-compte bouton-hors-ligne" id="btn-partager-pour-concours">⬆️ Partager un document pour ce concours</button>
+
+        <div class="biblio-partage-formulaire" id="formulaire-partage-concours" hidden>
+          <input type="text" id="partage-concours-nom" placeholder="Titre du document">
+          <select id="partage-concours-categorie">
+            <option value="Annale">Annale</option>
+            <option value="Cours">Cours</option>
+            <option value="Fiche">Fiche</option>
+            <option value="Document">Autre document</option>
+          </select>
+          <input type="file" id="partage-concours-fichier" accept=".pdf,.doc,.docx,.txt">
+          <button type="button" class="bouton-envoyer" id="btn-valider-partage-concours">Envoyer</button>
+          <p class="note-avertissement">⚠️ Uniquement des documents dont tu as le droit de partage (tes propres annales/cours/fiches).</p>
+        </div>
+
+        <div class="grille-documents" id="grille-documents-concours"></div>
+      </div>
+
     </div>
 
     <!-- ===== Mode Bibliothèque : importer un PDF et discuter avec son contenu ===== -->

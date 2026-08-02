@@ -14,11 +14,13 @@ from services import auth as auth_service
 NOM_BUCKET = "documents"
 
 
-def lister_documents(categorie: str | None = None) -> list[dict]:
+def lister_documents(categorie: str | None = None, concours: str | None = None) -> list[dict]:
     client = auth_service.obtenir_client()
     requete = client.table("documents_bibliotheque").select("*").order("date_ajout", desc=True)
     if categorie and categorie != "Tous":
         requete = requete.eq("categorie", categorie)
+    if concours:
+        requete = requete.eq("concours", concours)
     reponse = requete.execute()
     return reponse.data
 
@@ -30,6 +32,7 @@ def uploader_et_cataloguer(
     nom_fichier: str,
     contenu: bytes,
     type_mime: str,
+    concours: str | None = None,
 ) -> dict:
     client = auth_service.obtenir_client()
 
@@ -44,6 +47,7 @@ def uploader_et_cataloguer(
     ligne = {
         "nom": nom_affiche,
         "categorie": categorie,
+        "concours": concours or None,
         "origine": "utilisateur",
         "uploaded_by": id_utilisateur,
         "chemin_fichier": chemin_storage,

@@ -220,10 +220,10 @@ def profil(authorization: str = ""):
 
 
 @app.get("/api/bibliotheque/documents")
-def lister_documents_partages(categorie: str = "Tous"):
+def lister_documents_partages(categorie: str = "Tous", concours: str = ""):
     """Liste publique des documents partagés — pas besoin d'être connecté pour consulter."""
     try:
-        return bibliotheque_service.lister_documents(categorie)
+        return bibliotheque_service.lister_documents(categorie, concours or None)
     except Exception as erreur:
         raise HTTPException(status_code=500, detail=str(erreur))
 
@@ -233,6 +233,7 @@ async def partager_document(
     fichier: UploadFile = File(...),
     nom: str = Form(...),
     categorie: str = Form(...),
+    concours: str = Form(""),
     authorization: str = "",
 ):
     """Uploader un document dans la bibliothèque partagée — réservé aux utilisateurs connectés."""
@@ -244,7 +245,7 @@ async def partager_document(
         contenu = await fichier.read()
         document = bibliotheque_service.uploader_et_cataloguer(
             utilisateur.id, nom, categorie, fichier.filename, contenu,
-            fichier.content_type or "application/octet-stream",
+            fichier.content_type or "application/octet-stream", concours or None,
         )
         return document
     except Exception as erreur:
