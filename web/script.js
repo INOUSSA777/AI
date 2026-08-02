@@ -2215,21 +2215,31 @@ window.addEventListener("online", mettreAJourBandeauConnexion);
 window.addEventListener("offline", mettreAJourBandeauConnexion);
 mettreAJourBandeauConnexion();
 
-// ---------- mot de passe oublié ----------
+// ---------- mot de passe oublié (par code, pas par lien) ----------
 const fondModaleReinit = document.getElementById("fond-modale-reinit");
+const reinitEtapeEmail = document.getElementById("reinit-etape-email");
+const reinitEtapeCode = document.getElementById("reinit-etape-code");
 const reinitChampEmail = document.getElementById("reinit-champ-email");
 const reinitBoutonEnvoyer = document.getElementById("reinit-bouton-envoyer");
 const reinitMessage = document.getElementById("reinit-message");
+const reinitChampCode = document.getElementById("reinit-champ-code");
+const reinitChampNouveauMdp = document.getElementById("reinit-champ-nouveau-mdp");
+const reinitBoutonValiderCode = document.getElementById("reinit-bouton-valider-code");
+const reinitCodeMessage = document.getElementById("reinit-code-message");
+
+let emailEnAttenteDeCode = "";
 
 document.getElementById("compte-mdp-oublie").addEventListener("click", () => {
   fondModaleCompte.hidden = true;
+  reinitEtapeEmail.hidden = false;
+  reinitEtapeCode.hidden = true;
   reinitChampEmail.value = "";
   reinitMessage.textContent = "";
   fondModaleReinit.hidden = false;
 });
 document.getElementById("fermer-modale-reinit").addEventListener("click", () => { fondModaleReinit.hidden = true; });
 
-reinitBoutonEnvoyer.addEventListener("click", async () => {
+async function envoyerCodeReinitialisation() {
   const email = reinitChampEmail.value.trim();
   if (!email) {
     reinitMessage.textContent = "Entre ton email d'abord.";
@@ -2245,11 +2255,56 @@ reinitBoutonEnvoyer.addEventListener("click", async () => {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || "Erreur lors de l'envoi.");
-    reinitMessage.style.color = "var(--accent)";
-    reinitMessage.textContent = "✅ Email envoyé — vérifie ta boîte de réception (et les spams).";
+
+    emailEnAttenteDeCode = email;
+    reinitEtapeEmail.hidden = true;
+    reinitEtapeCode.hidden = false;
+    reinitChampCode.value = "";
+    reinitChampNouveauMdp.value = "";
+    reinitCodeMessage.textContent = "";
   } catch (erreur) {
     reinitMessage.style.color = "var(--erreur)";
     reinitMessage.textContent = erreur.message;
+  }
+}
+reinitBoutonEnvoyer.addEventListener("click", envoyerCodeReinitialisation);
+
+document.getElementById("reinit-renvoyer-code").addEventListener("click", () => {
+  reinitEtapeCode.hidden = true;
+  reinitEtapeEmail.hidden = false;
+  reinitChampEmail.value = emailEnAttenteDeCode;
+});
+
+reinitBoutonValiderCode.addEventListener("click", async () => {
+  const code = reinitChampCode.value.trim();
+  const nouveauMdp = reinitChampNouveauMdp.value;
+
+  if (!code || nouveauMdp.length < 6) {
+    reinitCodeMessage.style.color = "var(--erreur)";
+    reinitCodeMessage.textContent = "Entre le code reçu et un mot de passe de 6 caractères minimum.";
+    return;
+  }
+  reinitCodeMessage.style.color = "var(--muet)";
+  reinitCodeMessage.textContent = "Vérification…";
+
+  try {
+    const res = await fetch("/api/auth/verifier-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: emailEnAttenteDeCode, code, nouveau_mot_de_passe: nouveauMdp }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Erreur.");
+
+    reinitCodeMessage.style.color = "var(--accent)";
+    reinitCodeMessage.textContent = "✅ Mot de passe changé — tu peux te connecter.";
+    setTimeout(() => {
+      fondModaleReinit.hidden = true;
+      ouvrirModaleCompte("connexion");
+    }, 1500);
+  } catch (erreur) {
+    reinitCodeMessage.style.color = "var(--erreur)";
+    reinitCodeMessage.textContent = erreur.message;
   }
 });
 

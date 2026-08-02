@@ -66,6 +66,12 @@ class NouveauMotDePasse(BaseModel):
     nouveau_mot_de_passe: str
 
 
+class CodeReinitialisation(BaseModel):
+    email: str
+    code: str
+    nouveau_mot_de_passe: str
+
+
 @app.get("/api/sante")
 def sante():
     """Vérifie que l'API répond et que les clés nécessaires sont configurées."""
@@ -204,6 +210,19 @@ def nouveau_mot_de_passe(donnees: NouveauMotDePasse):
         return {"ok": True}
     except Exception as erreur:
         raise HTTPException(status_code=400, detail="Lien invalide ou expiré. Redemande un lien de réinitialisation.")
+
+
+@app.post("/api/auth/verifier-code")
+def verifier_code(donnees: CodeReinitialisation):
+    if len(donnees.nouveau_mot_de_passe) < 6:
+        raise HTTPException(status_code=400, detail="Le mot de passe doit faire au moins 6 caractères.")
+    try:
+        auth_service.verifier_code_et_definir_mot_de_passe(
+            donnees.email, donnees.code, donnees.nouveau_mot_de_passe
+        )
+        return {"ok": True}
+    except Exception as erreur:
+        raise HTTPException(status_code=400, detail="Code incorrect ou expiré. Redemande un nouveau code.")
 
 
 @app.get("/api/profil")

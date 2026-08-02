@@ -60,9 +60,21 @@ def connecter(email: str, mot_de_passe: str) -> dict:
 
 
 def envoyer_lien_reinitialisation(email: str, url_retour: str) -> None:
-    """Envoie un email Supabase avec un lien pour réinitialiser le mot de passe."""
+    """Envoie l'email Supabase de réinitialisation (contient à la fois un lien et un code)."""
     client = obtenir_client()
     client.auth.reset_password_for_email(email, {"redirect_to": url_retour})
+
+
+def verifier_code_et_definir_mot_de_passe(email: str, code: str, nouveau_mot_de_passe: str) -> None:
+    """
+    Vérifie le code à 6 chiffres reçu par email et définit directement le
+    nouveau mot de passe — alternative au lien cliquable, plus simple pour
+    l'utilisateur (rien à cliquer, juste un code à retaper).
+    """
+    client = obtenir_client()
+    reponse = client.auth.verify_otp({"email": email, "token": code, "type": "recovery"})
+    client.auth.set_session(reponse.session.access_token, reponse.session.refresh_token)
+    client.auth.update_user({"password": nouveau_mot_de_passe})
 
 
 def definir_nouveau_mot_de_passe(access_token: str, refresh_token: str, nouveau_mot_de_passe: str) -> None:

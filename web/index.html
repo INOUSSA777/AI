@@ -368,11 +368,24 @@
 <div class="fond-modale" id="fond-modale-reinit" hidden>
   <div class="modale-compte">
     <button type="button" class="fermer-modale" id="fermer-modale-reinit">✕</button>
-    <h2>Mot de passe oublié</h2>
-    <p class="guide-desc" style="margin:0 0 4px;">Entre ton email, tu recevras un lien pour choisir un nouveau mot de passe.</p>
-    <input type="email" id="reinit-champ-email" placeholder="Adresse email" autocomplete="email">
-    <button type="button" class="bouton-envoyer" id="reinit-bouton-envoyer">Envoyer le lien</button>
-    <p class="compte-message" id="reinit-message"></p>
+
+    <div id="reinit-etape-email">
+      <h2>Mot de passe oublié</h2>
+      <p class="guide-desc" style="margin:0 0 4px;">Entre ton email, tu recevras un code à 6 chiffres.</p>
+      <input type="email" id="reinit-champ-email" placeholder="Adresse email" autocomplete="email">
+      <button type="button" class="bouton-envoyer" id="reinit-bouton-envoyer">Envoyer le code</button>
+      <p class="compte-message" id="reinit-message"></p>
+    </div>
+
+    <div id="reinit-etape-code" hidden>
+      <h2>Entre ton code</h2>
+      <p class="guide-desc" style="margin:0 0 4px;">Vérifie ta boîte mail (et les spams) : un code à 6 chiffres t'a été envoyé.</p>
+      <input type="text" id="reinit-champ-code" placeholder="Code reçu par email" inputmode="numeric" maxlength="6">
+      <input type="password" id="reinit-champ-nouveau-mdp" placeholder="Nouveau mot de passe (6 caractères min.)" autocomplete="new-password">
+      <button type="button" class="bouton-envoyer" id="reinit-bouton-valider-code">Valider</button>
+      <p class="compte-message" id="reinit-code-message"></p>
+      <button type="button" class="lien-bascule" id="reinit-renvoyer-code">Je n'ai pas reçu de code, renvoyer</button>
+    </div>
   </div>
 </div>
 
