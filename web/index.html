@@ -40,6 +40,9 @@
       <button class="mode-btn" data-mode="bibliotheque">
         <span class="mode-num">04</span> 📖 <span data-i18n="modeBibliotheque">Bibliothèque</span>
       </button>
+      <button class="mode-btn" data-mode="profil">
+        <span class="mode-num">05</span> 👤 <span data-i18n="modeProfil">Mon profil</span>
+      </button>
     </nav>
 
     <button type="button" id="btn-parametres" class="bouton-parametres">
@@ -291,6 +294,32 @@
         <div class="grille-documents" id="grille-documents-concours"></div>
       </div>
 
+    </div>
+
+    <!-- ===== Mode Mon profil : historique réel d'apprentissage ===== -->
+    <div class="ecran-dedie ecran-profil" id="ecran-profil" hidden>
+      <div id="profil-non-connecte">
+        <h2>👤 Mon profil</h2>
+        <p class="guide-desc">Connecte-toi pour voir ton vrai historique d'apprentissage — points, série de jours actifs, matières étudiées.</p>
+      </div>
+
+      <div id="profil-connecte" hidden>
+        <div class="profil-entete">
+          <div class="profil-avatar" id="profil-avatar-lettres"></div>
+          <div>
+            <div class="profil-titre">Mon profil</div>
+            <div class="profil-sous-titre" id="profil-email-texte"></div>
+          </div>
+        </div>
+
+        <div class="profil-stats" id="profil-stats"></div>
+
+        <div class="profil-section-titre">MATIÈRES ÉTUDIÉES</div>
+        <div id="profil-matieres" class="profil-matieres"></div>
+
+        <div class="profil-section-titre">HISTORIQUE RÉCENT</div>
+        <div id="profil-historique" class="profil-historique"></div>
+      </div>
     </div>
 
     <!-- ===== Mode Bibliothèque : importer un PDF et discuter avec son contenu ===== -->

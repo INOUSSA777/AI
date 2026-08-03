@@ -22,6 +22,7 @@ from pydantic import BaseModel
 from services import chat_ai
 from services import auth as auth_service
 from services import bibliotheque as bibliotheque_service
+from services import profil as profil_service
 
 app = FastAPI(title="INOUS.AI")
 
@@ -53,6 +54,18 @@ class PromptImage(BaseModel):
 class IdentifiantsCompte(BaseModel):
     email: str
     mot_de_passe: str
+
+
+class JetonRafraichissement(BaseModel):
+    jeton_rafraichissement: str
+
+
+class ActiviteAEnregistrer(BaseModel):
+    type_activite: str
+    matiere: str | None = None
+    sujet: str | None = None
+    score: int | None = None
+    total: int | None = None
 
 
 class DemandeReinitialisation(BaseModel):
@@ -190,6 +203,15 @@ def connexion(donnees: IdentifiantsCompte):
         raise HTTPException(status_code=401, detail="Email ou mot de passe incorrect.")
 
 
+@app.post("/api/auth/rafraichir")
+def rafraichir(donnees: JetonRafraichissement):
+    """Renouvelle un jeton d'accès expiré, sans redemander le mot de passe."""
+    try:
+        return auth_service.rafraichir_session(donnees.jeton_rafraichissement)
+    except Exception as erreur:
+        raise HTTPException(status_code=401, detail="Session expirée, reconnecte-toi.")
+
+
 @app.post("/api/auth/mot-de-passe-oublie")
 def mot_de_passe_oublie(donnees: DemandeReinitialisation):
     try:
@@ -234,6 +256,35 @@ def profil(authorization: str = ""):
         raise HTTPException(status_code=401, detail="Non connecté.")
     try:
         return auth_service.obtenir_profil(utilisateur.id)
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.post("/api/profil/activite")
+def enregistrer_activite_profil(donnees: ActiviteAEnregistrer, authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Non connecté.")
+    try:
+        return profil_service.enregistrer_activite(
+            utilisateur.id, donnees.type_activite, donnees.matiere, donnees.sujet, donnees.score, donnees.total
+        )
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.get("/api/profil/historique")
+def historique_profil(authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Non connecté.")
+    try:
+        return {
+            "historique": profil_service.obtenir_historique(utilisateur.id),
+            "stats": profil_service.obtenir_stats(utilisateur.id),
+        }
     except Exception as erreur:
         raise HTTPException(status_code=500, detail=str(erreur))
 

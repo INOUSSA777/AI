@@ -19,6 +19,7 @@ const etudeSujet = document.getElementById("etude-sujet");
 const ecranEtude = document.getElementById("ecran-etude");
 const ecranConcours = document.getElementById("ecran-concours");
 const ecranBibliotheque = document.getElementById("ecran-bibliotheque");
+const ecranProfil = document.getElementById("ecran-profil");
 const boutonStopAudio = document.getElementById("bouton-stop-audio");
 const boutonFermerMenu = document.getElementById("bouton-fermer-menu");
 const boutonOuvrirMenu = document.getElementById("bouton-ouvrir-menu");
@@ -347,6 +348,59 @@ function appliquerLangue() {
 
 selecteurLangue.addEventListener("change", appliquerLangue);
 
+// ============================================================
+// Requête authentifiée avec renouvellement automatique du jeton :
+// si le serveur répond 401 (jeton expiré, ~1h de durée de vie), on essaie
+// une seule fois de le renouveler silencieusement avant de redemander une
+// vraie reconnexion à l'utilisateur.
+// ============================================================
+async function rafraichirJeton() {
+  const jetonRafraichissement = localStorage.getItem("inous_jeton_rafraichissement");
+  if (!jetonRafraichissement) return null;
+
+  try {
+    const res = await fetch("/api/auth/rafraichir", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jeton_rafraichissement: jetonRafraichissement }),
+    });
+    if (!res.ok) throw new Error("échec du renouvellement");
+    const data = await res.json();
+    localStorage.setItem("inous_jeton", data.jeton);
+    localStorage.setItem("inous_jeton_rafraichissement", data.jeton_rafraichissement);
+    return data.jeton;
+  } catch {
+    // le renouvellement a échoué : la session est vraiment terminée
+    localStorage.removeItem("inous_jeton");
+    localStorage.removeItem("inous_jeton_rafraichissement");
+    localStorage.removeItem("inous_email");
+    return null;
+  }
+}
+
+// enveloppe fetch() : ajoute automatiquement l'en-tête d'autorisation, et
+// retente une fois avec un jeton neuf si le premier essai est refusé (401)
+async function fetchAuthentifie(url, options = {}) {
+  let jeton = localStorage.getItem("inous_jeton");
+  const entetes = { ...(options.headers || {}), Authorization: `Bearer ${jeton}` };
+
+  let reponse = await fetch(url, { ...options, headers: entetes });
+
+  if (reponse.status === 401) {
+    const nouveauJeton = await rafraichirJeton();
+    if (nouveauJeton) {
+      reponse = await fetch(url, {
+        ...options,
+        headers: { ...(options.headers || {}), Authorization: `Bearer ${nouveauJeton}` },
+      });
+    } else {
+      appliquerEtatConnexion(); // met l'interface à jour : redevient "déconnecté"
+    }
+  }
+  return reponse;
+}
+
+
 // ---------- déplier/replier le panneau Paramètres ----------
 document.getElementById("btn-parametres").addEventListener("click", () => {
   const panneau = document.getElementById("panneau-parametres");
@@ -383,6 +437,7 @@ function masquerTousLesPanneaux() {
   ecranEtude.hidden = true;
   ecranConcours.hidden = true;
   ecranBibliotheque.hidden = true;
+  ecranProfil.hidden = true;
 }
 
 boutonsModes.forEach((bouton) => {
@@ -401,6 +456,9 @@ boutonsModes.forEach((bouton) => {
       ecranConcours.hidden = false;
     } else if (modeActif === "bibliotheque") {
       ecranBibliotheque.hidden = false;
+    } else if (modeActif === "profil") {
+      ecranProfil.hidden = false;
+      chargerMonProfil();
     }
 
     if (window.innerWidth <= 720) {
@@ -562,7 +620,10 @@ async function chargerEtape(etape, instructionSupplementaire) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
-      if (etape === "cours") etudeCoursTexteBrut = data.reponse;
+      if (etape === "cours") {
+        etudeCoursTexteBrut = data.reponse;
+        enregistrerActivite("cours", etudeContexte.matiere, etudeContexte.sujet);
+      }
       afficherContenuEtape(etape, data.reponse, structuree);
     }
   } catch (erreur) {
@@ -739,6 +800,7 @@ async function afficherQuizEtude() {
             } else {
               etudeContenuEl.innerHTML = `<p>🎉 ${texteTraduit("jeuxScoreTexte").replace("{score}", score).replace("{total}", questions.length)}</p>${construireNavigationEtude()}`;
               brancherNavigationEtude();
+              enregistrerActivite("quiz", etudeContexte.matiere, etudeContexte.sujet, score, questions.length);
             }
           });
           etudeContenuEl.appendChild(boutonSuite);
@@ -1754,9 +1816,8 @@ btnValiderPartageConcours.addEventListener("click", async () => {
     formData.append("categorie", categorie);
     formData.append("concours", concoursActuel);
 
-    const res = await fetch("/api/bibliotheque/partager", {
+    const res = await fetchAuthentifie("/api/bibliotheque/partager", {
       method: "POST",
-      headers: { Authorization: `Bearer ${jeton}` },
       body: formData,
     });
     const data = await res.json();
@@ -1795,6 +1856,7 @@ async function genererPreparationConcours(nomConcours) {
     concoursResultatDetail.innerHTML = construireReponseStructuree(data.reponse);
     rendreMaths(concoursResultatDetail);
     lireAudioAutomatique(texteLisibleDepuisReponse(data.reponse));
+    enregistrerActivite("concours", nomConcours, infos.organisme);
   } catch (erreur) {
     concoursResultatDetail.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
   }
@@ -1980,7 +2042,10 @@ async function genererQuizDocument() {
           suite.addEventListener("click", () => {
             index++;
             if (index < questions.length) afficherQ();
-            else biblioResultat.innerHTML = `<p>🎉 ${texteTraduit("jeuxScoreTexte").replace("{score}", score).replace("{total}", questions.length)}</p>`;
+            else {
+              biblioResultat.innerHTML = `<p>🎉 ${texteTraduit("jeuxScoreTexte").replace("{score}", score).replace("{total}", questions.length)}</p>`;
+              enregistrerActivite("quiz_document", documentImporte ? documentImporte.nom : "Document", null, score, questions.length);
+            }
           });
           biblioResultat.appendChild(suite);
         });
@@ -2070,9 +2135,8 @@ btnValiderPartage.addEventListener("click", async () => {
     formData.append("nom", nom);
     formData.append("categorie", categorie);
 
-    const res = await fetch("/api/bibliotheque/partager", {
+    const res = await fetchAuthentifie("/api/bibliotheque/partager", {
       method: "POST",
-      headers: { Authorization: `Bearer ${jeton}` },
       body: formData,
     });
     const data = await res.json();
@@ -2091,6 +2155,89 @@ btnValiderPartage.addEventListener("click", async () => {
 });
 
 chargerDocumentsPartages();
+
+// ============================================================
+// MON PROFIL : historique réel d'apprentissage (points, série, séances)
+// ============================================================
+const COULEURS_MATIERE = ["#5fbf8a", "#5b9bd5", "#8b6fd8", "#e8b75c", "#d97b6c"];
+const LIBELLES_TYPE_ACTIVITE = {
+  cours: "Cours", quiz: "Quiz", jeu: "Jeu", quiz_document: "Quiz document", concours: "Préparation concours",
+};
+
+// enregistre discrètement une activité terminée — jamais bloquant pour
+// l'utilisateur : si ça échoue (pas connecté, réseau...), on l'ignore
+async function enregistrerActivite(typeActivite, matiere, sujet, score, total) {
+  if (!localStorage.getItem("inous_jeton")) return;
+  try {
+    await fetchAuthentifie("/api/profil/activite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type_activite: typeActivite, matiere, sujet, score, total }),
+    });
+  } catch {
+    // best-effort, silencieux
+  }
+}
+
+async function chargerMonProfil() {
+  const jeton = localStorage.getItem("inous_jeton");
+  const email = localStorage.getItem("inous_email");
+  document.getElementById("profil-non-connecte").hidden = !!jeton;
+  document.getElementById("profil-connecte").hidden = !jeton;
+  if (!jeton) return;
+
+  document.getElementById("profil-avatar-lettres").textContent = email.slice(0, 2).toUpperCase();
+  document.getElementById("profil-email-texte").textContent = email;
+
+  const conteneurStats = document.getElementById("profil-stats");
+  conteneurStats.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+
+  try {
+    const res = await fetchAuthentifie("/api/profil/historique");
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+
+    const resProfil = await fetchAuthentifie("/api/profil");
+    const profil = resProfil.ok ? await resProfil.json() : { points: 0, serie_actuelle: 0 };
+
+    conteneurStats.innerHTML = `
+      <div class="profil-stat-carte"><div class="profil-stat-icone">🔥</div><div class="profil-stat-valeur">${profil.serie_actuelle || 0}</div><div class="profil-stat-label">jours de suite</div></div>
+      <div class="profil-stat-carte"><div class="profil-stat-icone">⭐</div><div class="profil-stat-valeur">${profil.points || 0}</div><div class="profil-stat-label">points</div></div>
+      <div class="profil-stat-carte"><div class="profil-stat-icone">📚</div><div class="profil-stat-valeur">${data.stats.seances}</div><div class="profil-stat-label">séances</div></div>
+      <div class="profil-stat-carte"><div class="profil-stat-icone">🎯</div><div class="profil-stat-valeur">${data.stats.score_moyen !== null ? data.stats.score_moyen + "%" : "—"}</div><div class="profil-stat-label">score moyen quiz</div></div>
+    `;
+
+    const matieres = Object.entries(data.stats.matieres).sort((a, b) => b[1] - a[1]);
+    const maxCompte = matieres.length ? matieres[0][1] : 1;
+    document.getElementById("profil-matieres").innerHTML = matieres.length
+      ? matieres.map(([nom, compte], i) => `
+          <div class="profil-matiere-ligne">
+            <span class="profil-matiere-nom">${echapperHtml(nom)}</span>
+            <div class="profil-matiere-barre"><div class="profil-matiere-remplie" style="width:${Math.round((compte / maxCompte) * 100)}%;background:${COULEURS_MATIERE[i % COULEURS_MATIERE.length]};"></div></div>
+            <span class="profil-matiere-compte">${compte} séance${compte > 1 ? "s" : ""}</span>
+          </div>`).join("")
+      : `<p class="chargement-guide">Aucune activité pour l'instant — commence une séance dans "Étudier avec moi" !</p>`;
+
+    document.getElementById("profil-historique").innerHTML = data.historique.length
+      ? data.historique.map((h) => {
+          const badge = h.total
+            ? `<span class="histo-badge" style="background:rgba(95,191,138,0.16);color:#5fbf8a;">${h.score}/${h.total}</span>`
+            : `<span class="histo-badge" style="background:rgba(91,155,213,0.16);color:#5b9bd5;">terminé</span>`;
+          const date = new Date(h.date_activite).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+          return `
+            <div class="profil-ligne-histo">
+              <div>
+                <div class="histo-titre">${echapperHtml(h.matiere || "")}${h.sujet ? " — " + echapperHtml(h.sujet) : ""}</div>
+                <div class="histo-meta">${LIBELLES_TYPE_ACTIVITE[h.type_activite] || h.type_activite} · ${date}</div>
+              </div>
+              ${badge}
+            </div>`;
+        }).join("")
+      : `<p class="chargement-guide">Rien à afficher pour l'instant.</p>`;
+  } catch (erreur) {
+    conteneurStats.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
+  }
+}
 
 // ============================================================
 // COMPTE UTILISATEUR (connexion / inscription réelles via Supabase)
@@ -2150,6 +2297,7 @@ boutonValiderCompte.addEventListener("click", async () => {
     }
 
     localStorage.setItem("inous_jeton", data.jeton);
+    localStorage.setItem("inous_jeton_rafraichissement", data.jeton_rafraichissement);
     localStorage.setItem("inous_email", data.email);
     fondModaleCompte.hidden = true;
     await appliquerEtatConnexion();
@@ -2161,6 +2309,7 @@ boutonValiderCompte.addEventListener("click", async () => {
 
 document.getElementById("btn-deconnexion").addEventListener("click", () => {
   localStorage.removeItem("inous_jeton");
+  localStorage.removeItem("inous_jeton_rafraichissement");
   localStorage.removeItem("inous_email");
   appliquerEtatConnexion();
 });
@@ -2180,7 +2329,7 @@ async function appliquerEtatConnexion() {
   compteEmailEl.textContent = email;
 
   try {
-    const res = await fetch("/api/profil", { headers: { Authorization: `Bearer ${jeton}` } });
+    const res = await fetchAuthentifie("/api/profil");
     if (!res.ok) throw new Error();
     const profil = await res.json();
     compteProgresEl.textContent = `🔥 ${profil.serie_actuelle} · ⭐ ${profil.points}`;

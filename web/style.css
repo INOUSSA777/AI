@@ -803,6 +803,73 @@ body {
 }
 
 /* ---------- Bibliothèque ---------- */
+/* ---------- Mon profil ---------- */
+.profil-entete {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.profil-avatar {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--violet));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 1.1rem; color: #1c2418;
+  flex-shrink: 0;
+}
+.profil-titre { font-family: var(--police-affichage); font-size: 1.25rem; font-weight: 600; color: var(--craie); }
+.profil-sous-titre { font-size: 0.8rem; color: var(--muet); }
+
+.profil-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.profil-stat-carte {
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+.profil-stat-icone { font-size: 1.3rem; }
+.profil-stat-valeur { font-size: 1.1rem; font-weight: 700; margin-top: 4px; color: var(--craie); }
+.profil-stat-label { font-size: 0.68rem; color: var(--muet); }
+
+.profil-section-titre {
+  font-size: 0.78rem;
+  font-family: var(--police-utilitaire);
+  color: var(--muet);
+  margin: 0 0 8px;
+}
+.profil-matieres { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+.profil-matiere-ligne { display: flex; align-items: center; gap: 10px; }
+.profil-matiere-nom { width: 100px; font-size: 0.82rem; color: var(--craie-douce); flex-shrink: 0; }
+.profil-matiere-barre { flex: 1; height: 6px; background: var(--surface-haute); border-radius: 4px; overflow: hidden; }
+.profil-matiere-remplie { height: 100%; }
+.profil-matiere-compte { font-size: 0.72rem; color: var(--muet); flex-shrink: 0; }
+
+.profil-historique { display: flex; flex-direction: column; gap: 6px; }
+.profil-ligne-histo {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--panneau);
+  border-radius: 9px;
+  padding: 10px 12px;
+}
+.profil-ligne-histo .histo-titre { font-size: 0.85rem; color: var(--craie); }
+.profil-ligne-histo .histo-meta { font-size: 0.68rem; color: var(--muet); }
+.histo-badge {
+  font-size: 0.72rem;
+  padding: 3px 9px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 500px) {
+  .profil-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
 .ecran-bibliotheque {
   --violet: #8b6fd8;
   --rose: #d86fb0;
