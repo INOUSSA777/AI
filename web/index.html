@@ -274,20 +274,31 @@
 
         <div class="concours-resultat" id="concours-resultat-detail"></div>
 
+        <div class="concours-bloc-quiz">
+          <h3 class="biblio-section-titre">🎯 QCM d'entraînement</h3>
+          <p class="guide-desc">Un mini quiz généré pour vérifier tes connaissances sur ce concours.</p>
+          <button type="button" class="bouton-envoyer bouton-guide" id="btn-lancer-quiz-concours">Lancer un QCM</button>
+          <div class="concours-resultat" id="concours-quiz-zone" hidden></div>
+        </div>
+
         <h3 class="biblio-section-titre">📄 Sujets & documents partagés pour ce concours</h3>
         <p class="guide-desc">Annales, fiches et cours partagés par la communauté pour ce concours précis.</p>
-        <button type="button" class="bouton-compte bouton-hors-ligne" id="btn-partager-pour-concours">⬆️ Partager un document pour ce concours</button>
+        <button type="button" class="bouton-compte bouton-hors-ligne" id="btn-partager-pour-concours">⬆️ Partager des documents pour ce concours</button>
 
         <div class="biblio-partage-formulaire" id="formulaire-partage-concours" hidden>
-          <input type="text" id="partage-concours-nom" placeholder="Titre du document">
           <select id="partage-concours-categorie">
+            <option value="Auto" selected>🤖 Laisser l'IA classer chaque document</option>
+            <option value="Sujet">Sujet</option>
+            <option value="Corrigé">Corrigé</option>
             <option value="Annale">Annale</option>
             <option value="Cours">Cours</option>
             <option value="Fiche">Fiche</option>
             <option value="Document">Autre document</option>
           </select>
-          <input type="file" id="partage-concours-fichier" accept=".pdf,.doc,.docx,.txt">
+          <input type="file" id="partage-concours-fichier" accept=".pdf,.doc,.docx,.txt" multiple>
+          <p class="note-avertissement" style="margin-top:-4px;">💡 Sélectionne plusieurs fichiers d'un coup (Ctrl ou Maj + clic) — chacun garde son nom de fichier comme titre.</p>
           <button type="button" class="bouton-envoyer" id="btn-valider-partage-concours">Envoyer</button>
+          <p class="statut-envoi-lot" id="statut-envoi-concours"></p>
           <p class="note-avertissement">⚠️ Uniquement des documents dont tu as le droit de partage (tes propres annales/cours/fiches).</p>
         </div>
 
@@ -365,26 +376,32 @@
       <div class="biblio-partage-barre">
         <select id="biblio-filtre-categorie">
           <option value="Tous">Toutes catégories</option>
+          <option value="Sujet">Sujet</option>
+          <option value="Corrigé">Corrigé</option>
+          <option value="Annale">Annale</option>
           <option value="Cours">Cours</option>
           <option value="Fiche">Fiche</option>
-          <option value="Annale">Annale</option>
-          <option value="Roman">Roman</option>
+          <option value="Livre">Livre</option>
           <option value="Document">Autre document</option>
         </select>
         <button type="button" class="bouton-compte bouton-hors-ligne" id="btn-partager-document">⬆️ Partager un document</button>
       </div>
 
       <div class="biblio-partage-formulaire" id="biblio-partage-formulaire" hidden>
-        <input type="text" id="partage-nom" placeholder="Titre du document">
         <select id="partage-categorie">
+          <option value="Auto" selected>🤖 Laisser l'IA classer chaque document</option>
+          <option value="Sujet">Sujet</option>
+          <option value="Corrigé">Corrigé</option>
+          <option value="Annale">Annale</option>
           <option value="Cours">Cours</option>
           <option value="Fiche">Fiche</option>
-          <option value="Annale">Annale</option>
-          <option value="Roman">Roman (domaine public uniquement)</option>
+          <option value="Livre">Livre (domaine public uniquement)</option>
           <option value="Document">Autre document</option>
         </select>
-        <input type="file" id="partage-fichier" accept=".pdf,.doc,.docx,.txt">
+        <input type="file" id="partage-fichier" accept=".pdf,.doc,.docx,.txt" multiple>
+        <p class="note-avertissement" style="margin-top:-4px;">💡 Sélectionne plusieurs fichiers d'un coup (Ctrl ou Maj + clic) — chacun garde son nom de fichier comme titre.</p>
         <button type="button" class="bouton-envoyer" id="btn-valider-partage">Envoyer</button>
+        <p class="statut-envoi-lot" id="statut-envoi-biblio"></p>
         <p class="note-avertissement">⚠️ Ne partage que des documents dont tu as le droit (tes propres cours/fiches, ou des œuvres du domaine public). Pas de livres ou romans encore protégés par le droit d'auteur.</p>
       </div>
 

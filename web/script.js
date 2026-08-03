@@ -400,6 +400,48 @@ async function fetchAuthentifie(url, options = {}) {
   return reponse;
 }
 
+// envoie plusieurs fichiers l'un après l'autre vers la bibliothèque partagée,
+// chacun gardant son nom de fichier comme titre — utilisé pour les envois en
+// masse (des dizaines/centaines de documents à la fois)
+async function envoyerDocumentsEnLot(fichiers, categorie, concours, zoneStatut, apresChaqueEnvoi) {
+  const total = fichiers.length;
+  let reussis = 0;
+  let echecs = 0;
+  const classificationAuto = categorie === "Auto";
+
+  for (let i = 0; i < total; i++) {
+    const fichier = fichiers[i];
+    const nom = fichier.name.replace(/\.[^/.]+$/, "");
+    zoneStatut.textContent = classificationAuto
+      ? `Envoi ${i + 1}/${total} : ${nom}… (analyse par l'IA en cours)`
+      : `Envoi ${i + 1}/${total} : ${nom}…`;
+
+    try {
+      const formData = new FormData();
+      formData.append("fichier", fichier);
+      formData.append("nom", nom);
+      formData.append("categorie", categorie);
+      if (concours) formData.append("concours", concours);
+
+      const res = await fetchAuthentifie("/api/bibliotheque/partager", { method: "POST", body: formData });
+      if (res.ok) {
+        reussis++;
+        if (classificationAuto) {
+          const data = await res.json();
+          zoneStatut.textContent = `Envoi ${i + 1}/${total} : ${nom} → classé "${data.categorie}"`;
+        }
+      } else {
+        echecs++;
+      }
+    } catch {
+      echecs++;
+    }
+  }
+
+  zoneStatut.textContent = `✅ Terminé : ${reussis} envoyé${reussis > 1 ? "s" : ""}` + (echecs ? `, ⚠️ ${echecs} échec${echecs > 1 ? "s" : ""}.` : ".");
+  if (apresChaqueEnvoi) apresChaqueEnvoi();
+}
+
 
 // ---------- déplier/replier le panneau Paramètres ----------
 document.getElementById("btn-parametres").addEventListener("click", () => {
@@ -757,14 +799,7 @@ async function afficherQuizEtude() {
     `Réponds UNIQUEMENT avec un tableau JSON valide au format : [{"question": "...", "choix": ["...", "...", "...", "..."], "reponse": 0}]`;
 
   try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: prompt, historique: [], langue: selecteurLangue.value }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
-    const questions = extraireJSON(data.reponse);
+    const questions = await demanderTableauJSON(prompt, selecteurLangue.value);
 
     let index = 0;
     let score = 0;
@@ -1569,6 +1604,28 @@ function extraireJSONObjet(texteBrut) {
   return JSON.parse(nettoye.slice(debut, fin + 1));
 }
 
+// demande un tableau JSON à l'IA (questions de quiz, exercices...) avec une
+// nouvelle tentative automatique si le modèle ne renvoie pas un JSON valide
+// du premier coup — ça arrive, et sans ce filet le quiz semblait "ne pas marcher"
+async function demanderTableauJSON(prompt, langue) {
+  let derniereErreur;
+  for (let essai = 0; essai < 2; essai++) {
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: prompt, historique: [], langue }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+      return extraireJSON(data.reponse);
+    } catch (erreur) {
+      derniereErreur = erreur;
+    }
+  }
+  throw derniereErreur;
+}
+
 // ============================================================
 // PRÉPA CONCOURS
 // ============================================================
@@ -1733,7 +1790,6 @@ const concoursResultatDetail = document.getElementById("concours-resultat-detail
 const grilleDocumentsConcours = document.getElementById("grille-documents-concours");
 const btnPartagerPourConcours = document.getElementById("btn-partager-pour-concours");
 const formulairePartageConcours = document.getElementById("formulaire-partage-concours");
-const partageConcoursNom = document.getElementById("partage-concours-nom");
 const partageConcoursCategorie = document.getElementById("partage-concours-categorie");
 const partageConcoursFichier = document.getElementById("partage-concours-fichier");
 const btnValiderPartageConcours = document.getElementById("btn-valider-partage-concours");
@@ -1750,6 +1806,8 @@ async function ouvrirPageConcours(nomConcours) {
   document.getElementById("detail-concours-nom").textContent = infos.nom;
   document.getElementById("detail-concours-organisme").textContent = infos.organisme;
   formulairePartageConcours.hidden = true;
+  document.getElementById("concours-quiz-zone").hidden = true;
+  document.getElementById("concours-quiz-zone").innerHTML = "";
 
   await genererPreparationConcours(nomConcours);
   await chargerDocumentsPourConcours(nomConcours);
@@ -1797,42 +1855,24 @@ btnPartagerPourConcours.addEventListener("click", () => {
 });
 
 btnValiderPartageConcours.addEventListener("click", async () => {
-  const nom = partageConcoursNom.value.trim();
   const categorie = partageConcoursCategorie.value;
-  const fichier = partageConcoursFichier.files[0];
-  const jeton = localStorage.getItem("inous_jeton");
+  const fichiers = partageConcoursFichier.files;
+  const zoneStatut = document.getElementById("statut-envoi-concours");
 
-  if (!nom || !fichier) {
-    alert("Ajoute un titre et un fichier avant d'envoyer.");
+  if (!fichiers.length) {
+    alert("Choisis au moins un fichier avant d'envoyer.");
     return;
   }
   btnValiderPartageConcours.disabled = true;
   btnValiderPartageConcours.textContent = "Envoi en cours…";
 
-  try {
-    const formData = new FormData();
-    formData.append("fichier", fichier);
-    formData.append("nom", nom);
-    formData.append("categorie", categorie);
-    formData.append("concours", concoursActuel);
-
-    const res = await fetchAuthentifie("/api/bibliotheque/partager", {
-      method: "POST",
-      body: formData,
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
-
-    partageConcoursNom.value = "";
-    partageConcoursFichier.value = "";
-    formulairePartageConcours.hidden = true;
+  await envoyerDocumentsEnLot(fichiers, categorie, concoursActuel, zoneStatut, () => {
     chargerDocumentsPourConcours(concoursActuel);
-  } catch (erreur) {
-    alert("Erreur : " + erreur.message);
-  } finally {
-    btnValiderPartageConcours.disabled = false;
-    btnValiderPartageConcours.textContent = "Envoyer";
-  }
+  });
+
+  partageConcoursFichier.value = "";
+  btnValiderPartageConcours.disabled = false;
+  btnValiderPartageConcours.textContent = "Envoyer";
 });
 
 async function genererPreparationConcours(nomConcours) {
@@ -1861,6 +1901,66 @@ async function genererPreparationConcours(nomConcours) {
     concoursResultatDetail.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
   }
 }
+
+// ---------- QCM d'entraînement sur la page dédiée à un concours ----------
+document.getElementById("btn-lancer-quiz-concours").addEventListener("click", async () => {
+  const zone = document.getElementById("concours-quiz-zone");
+  const infos = LISTE_CONCOURS.find((c) => c.nom === concoursActuel);
+  zone.hidden = false;
+  zone.innerHTML = `<p class="chargement-guide">${texteTraduit("jeuxPreparation")}</p>`;
+
+  const prompt = `Génère exactement 4 questions à choix multiples typiques du concours "${concoursActuel}" ` +
+    `(${infos.organisme}, niveau ${infos.niveau}, catégorie ${infos.categorie}, Burkina Faso), portant sur les matières habituellement testées. ` +
+    `Réponds UNIQUEMENT avec un tableau JSON valide au format : [{"question": "...", "choix": ["...", "...", "...", "..."], "reponse": 0}]`;
+
+  try {
+    const questions = await demanderTableauJSON(prompt, selecteurLangue.value);
+    let index = 0;
+    let score = 0;
+
+    const afficherQ = () => {
+      const q = questions[index];
+      zone.innerHTML = `
+        <div class="jeu-progression">${index + 1} / ${questions.length}</div>
+        <div class="jeu-question">${echapperHtml(q.question)}</div>
+        <div class="jeu-choix">
+          ${q.choix.map((c, i) => `<button type="button" class="bouton-choix" data-index="${i}">${echapperHtml(c)}</button>`).join("")}
+        </div>
+      `;
+      rendreMaths(zone);
+      zone.querySelectorAll(".bouton-choix").forEach((bouton) => {
+        bouton.addEventListener("click", () => {
+          const choisi = Number(bouton.dataset.index);
+          zone.querySelectorAll(".bouton-choix").forEach((b) => (b.disabled = true));
+          if (choisi === Number(q.reponse)) {
+            bouton.classList.add("bonne-reponse");
+            score++;
+          } else {
+            bouton.classList.add("mauvaise-reponse");
+            zone.querySelectorAll(".bouton-choix")[q.reponse].classList.add("bonne-reponse");
+          }
+          const suite = document.createElement("button");
+          suite.type = "button";
+          suite.className = "bouton-envoyer jeu-suivant";
+          suite.textContent = index + 1 < questions.length ? texteTraduit("jeuxSuivant") : texteTraduit("jeuxTermine");
+          suite.addEventListener("click", () => {
+            index++;
+            if (index < questions.length) {
+              afficherQ();
+            } else {
+              zone.innerHTML = `<p>🎉 ${texteTraduit("jeuxScoreTexte").replace("{score}", score).replace("{total}", questions.length)}</p>`;
+              enregistrerActivite("quiz", concoursActuel, "QCM concours", score, questions.length);
+            }
+          });
+          zone.appendChild(suite);
+        });
+      });
+    };
+    afficherQ();
+  } catch {
+    zone.innerHTML = `<p>⚠️ ${texteTraduit("jeuxErreur")}</p>`;
+  }
+});
 
 // ---------- accès rapide ----------
 document.querySelectorAll(".acces-rapide-btn").forEach((bouton) => {
@@ -2065,7 +2165,6 @@ const grilleDocuments = document.getElementById("grille-documents");
 const filtreDocuments = document.getElementById("biblio-filtre-categorie");
 const btnPartagerDocument = document.getElementById("btn-partager-document");
 const formulairePartage = document.getElementById("biblio-partage-formulaire");
-const partageNom = document.getElementById("partage-nom");
 const partageCategorie = document.getElementById("partage-categorie");
 const partageFichier = document.getElementById("partage-fichier");
 const btnValiderPartage = document.getElementById("btn-valider-partage");
@@ -2117,41 +2216,24 @@ btnPartagerDocument.addEventListener("click", () => {
 });
 
 btnValiderPartage.addEventListener("click", async () => {
-  const nom = partageNom.value.trim();
   const categorie = partageCategorie.value;
-  const fichier = partageFichier.files[0];
-  const jeton = localStorage.getItem("inous_jeton");
+  const fichiers = partageFichier.files;
+  const zoneStatut = document.getElementById("statut-envoi-biblio");
 
-  if (!nom || !fichier) {
-    alert("Ajoute un titre et un fichier avant d'envoyer.");
+  if (!fichiers.length) {
+    alert("Choisis au moins un fichier avant d'envoyer.");
     return;
   }
   btnValiderPartage.disabled = true;
   btnValiderPartage.textContent = "Envoi en cours…";
 
-  try {
-    const formData = new FormData();
-    formData.append("fichier", fichier);
-    formData.append("nom", nom);
-    formData.append("categorie", categorie);
-
-    const res = await fetchAuthentifie("/api/bibliotheque/partager", {
-      method: "POST",
-      body: formData,
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
-
-    partageNom.value = "";
-    partageFichier.value = "";
-    formulairePartage.hidden = true;
+  await envoyerDocumentsEnLot(fichiers, categorie, null, zoneStatut, () => {
     chargerDocumentsPartages();
-  } catch (erreur) {
-    alert("Erreur : " + erreur.message);
-  } finally {
-    btnValiderPartage.disabled = false;
-    btnValiderPartage.textContent = "Envoyer";
-  }
+  });
+
+  partageFichier.value = "";
+  btnValiderPartage.disabled = false;
+  btnValiderPartage.textContent = "Envoyer";
 });
 
 chargerDocumentsPartages();

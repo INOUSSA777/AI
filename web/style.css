@@ -788,6 +788,7 @@ body {
   gap: 14px;
   margin: 16px 0 20px;
 }
+.concours-bloc-quiz { margin: 24px 0; }
 .concours-detail-entete h2 {
   font-family: var(--police-affichage);
   color: var(--craie);
@@ -991,6 +992,12 @@ body {
   max-width: 420px;
 }
 .biblio-partage-formulaire[hidden] { display: none; }
+.statut-envoi-lot {
+  font-size: 0.8rem;
+  color: var(--violet);
+  font-family: var(--police-utilitaire);
+  margin: 0;
+}
 .biblio-partage-formulaire input[type="text"],
 .biblio-partage-formulaire select {
   background: var(--surface-haute);

@@ -313,8 +313,14 @@ async def partager_document(
         raise HTTPException(status_code=401, detail="Connecte-toi pour partager un document.")
     try:
         contenu = await fichier.read()
+
+        categorie_finale = categorie
+        if categorie == "Auto":
+            extrait = bibliotheque_service.extraire_texte_apercu(fichier.filename, contenu)
+            categorie_finale = bibliotheque_service.classifier_document(fichier.filename, extrait)
+
         document = bibliotheque_service.uploader_et_cataloguer(
-            utilisateur.id, nom, categorie, fichier.filename, contenu,
+            utilisateur.id, nom, categorie_finale, fichier.filename, contenu,
             fichier.content_type or "application/octet-stream", concours or None,
         )
         return document
