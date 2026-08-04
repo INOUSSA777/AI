@@ -12,10 +12,14 @@ const statutTexte = document.getElementById("statut-texte");
 const selecteurLangue = document.getElementById("selecteur-langue");
 const selecteurStatut = document.getElementById("selecteur-statut");
 const boutonsModes = document.querySelectorAll(".mode-btn");
-const formulaireEtude = document.getElementById("formulaire-etude");
-const etudeParcours = document.getElementById("etude-parcours");
-const etudeMatiere = document.getElementById("etude-matiere");
-const etudeSujet = document.getElementById("etude-sujet");
+const etudeEtapeNiveau = document.getElementById("etude-etape-niveau");
+const etudeEtapeTechnique = document.getElementById("etude-etape-technique");
+const grilleNiveauxEtude = document.getElementById("grille-niveaux-etude");
+const grilleTechniques = document.getElementById("grille-techniques");
+const etudeNiveauChoisiTitre = document.getElementById("etude-niveau-choisi-titre");
+const etudeSujetFormulaire = document.getElementById("etude-sujet-formulaire");
+const etudeMatiereV2 = document.getElementById("etude-matiere-v2");
+const etudeSujetV2 = document.getElementById("etude-sujet-v2");
 const ecranEtude = document.getElementById("ecran-etude");
 const ecranConcours = document.getElementById("ecran-concours");
 const ecranBibliotheque = document.getElementById("ecran-bibliotheque");
@@ -41,7 +45,7 @@ let bibliothequePhrases = []; // texte de chaque phrase, indexé pour les bouton
 // une version parfaitement idiomatique.
 const TRADUCTIONS = {
   fr: {
-    sousTitre: "Assistant éducatif",
+    sousTitre: "L'intelligence artificielle pour améliorer ton apprentissage",
     modeChat: "Assistant IA",
     modeEtude: "Étudier avec moi",
     modeOrientation: "Orientation",
@@ -534,26 +538,118 @@ async function demanderALIA(prompt, conteneurResultat) {
   }
 }
 
-// ---------- Étudier avec moi : parcours proposés et leurs matières ----------
-const MATIERES_PAR_PARCOURS = {
-  "CEPE": ["Cours", "Examens", "Corrigés"],
-  "BEPC": ["Maths", "Français", "SVT", "Histoire"],
-  "BAC A": ["Philosophie", "Français", "Histoire", "Anglais"],
-  "BAC C": ["Maths", "PC", "SVT"],
-  "Université": ["Économie", "Statistique", "Informatique", "Droit"],
-};
+// ---------- Étudier avec moi : niveaux et techniques d'apprentissage ----------
+const NIVEAUX_ETUDE = [
+  { id: "Maternelle", icone: "🧸", age: "3 – 5 ans" },
+  { id: "Primaire", icone: "🎒", age: "6 – 11 ans" },
+  { id: "Collège", icone: "📖", age: "12 – 15 ans" },
+  { id: "Lycée", icone: "🎓", age: "16 – 18 ans" },
+  { id: "Formation professionnelle", icone: "🛠️", age: "18 ans et +" },
+  { id: "Université", icone: "🏛️", age: "Licence, Master, Doctorat" },
+];
 
-function remplirMatieresPourParcours() {
-  const matieres = MATIERES_PAR_PARCOURS[etudeParcours.value] || [];
-  etudeMatiere.innerHTML = matieres.map((m) => `<option value="${m}">${m}</option>`).join("");
+const TECHNIQUES_ETUDE = [
+  { id: "lecture", icone: "📘", titre: "Lecture active", desc: "Comprends le cours en profondeur, étape par étape.", disponible: true },
+  { id: "cartementale", icone: "🧠", titre: "Cartes mentales", desc: "Visualise les idées d'un sujet organisées en schéma.", disponible: true },
+  { id: "video", icone: "🎥", titre: "Vidéos pédagogiques", desc: "Apprends en vidéo.", disponible: false },
+  { id: "exercices", icone: "📝", titre: "Exercices pratiques", desc: "Applique ce que tu apprends avec des exercices corrigés.", disponible: true },
+  { id: "quiz", icone: "🎯", titre: "Quiz et auto-évaluation", desc: "Teste tes connaissances et suis ta progression.", disponible: true },
+  { id: "collaboratif", icone: "👥", titre: "Apprentissage collaboratif", desc: "Échange avec d'autres apprenants.", disponible: false },
+];
+
+let etudeNiveauChoisi = null;
+let etudeTechniqueChoisie = null;
+
+function rendreGrilleNiveauxEtude() {
+  grilleNiveauxEtude.innerHTML = NIVEAUX_ETUDE.map((n) => `
+    <button type="button" class="carte-niveau-etude" data-niveau="${n.id}">
+      <span class="niveau-etude-icone">${n.icone}</span>
+      <span class="niveau-etude-titre">${n.id}</span>
+      <span class="niveau-etude-age">${n.age}</span>
+    </button>
+  `).join("");
+  grilleNiveauxEtude.querySelectorAll(".carte-niveau-etude").forEach((carte) => {
+    carte.addEventListener("click", () => choisirNiveauEtude(carte.dataset.niveau));
+  });
 }
-etudeParcours.addEventListener("change", remplirMatieresPourParcours);
-remplirMatieresPourParcours(); // remplissage initial au chargement de la page
+rendreGrilleNiveauxEtude();
+
+const etudeEtapeMaternelle = document.getElementById("etude-etape-maternelle");
+const grilleJeuxMaternelle = document.getElementById("grille-jeux-maternelle");
+const zoneJeuMaternelle = document.getElementById("zone-jeu-maternelle");
+
+function choisirNiveauEtude(niveau) {
+  etudeNiveauChoisi = niveau;
+  etudeNiveauChoisiTitre.textContent = niveau;
+  etudeEtapeNiveau.hidden = true;
+
+  if (niveau === "Maternelle") {
+    etudeEtapeMaternelle.hidden = false;
+    rendreGrilleJeuxMaternelle();
+    return;
+  }
+
+  etudeEtapeTechnique.hidden = false;
+  etudeSujetFormulaire.hidden = true;
+  etudeTechniqueChoisie = null;
+  rendreGrilleTechniques();
+}
+
+document.getElementById("btn-retour-niveau-etude").addEventListener("click", () => {
+  etudeEtapeTechnique.hidden = true;
+  etudeEtapeNiveau.hidden = false;
+});
+
+document.getElementById("btn-retour-niveau-maternelle").addEventListener("click", () => {
+  etudeEtapeMaternelle.hidden = true;
+  zoneJeuMaternelle.hidden = true;
+  etudeEtapeNiveau.hidden = false;
+});
+
+function rendreGrilleTechniques() {
+  grilleTechniques.innerHTML = TECHNIQUES_ETUDE.map((t) => `
+    <button type="button" class="carte-technique ${t.disponible ? "" : "technique-indisponible"}" data-technique="${t.id}" ${t.disponible ? "" : "disabled"}>
+      <span class="technique-icone">${t.icone}</span>
+      <div>
+        <div class="technique-titre">${t.titre}</div>
+        <div class="technique-desc">${t.desc}</div>
+        ${!t.disponible ? `<span class="technique-badge">Bientôt disponible</span>` : ""}
+      </div>
+    </button>
+  `).join("");
+
+  grilleTechniques.querySelectorAll(".carte-technique:not(.technique-indisponible)").forEach((carte) => {
+    carte.addEventListener("click", () => {
+      grilleTechniques.querySelectorAll(".carte-technique").forEach((c) => c.classList.remove("technique-selectionnee"));
+      carte.classList.add("technique-selectionnee");
+      etudeTechniqueChoisie = carte.dataset.technique;
+      etudeSujetFormulaire.hidden = false;
+      etudeMatiereV2.focus();
+    });
+  });
+}
+
+document.getElementById("btn-commencer-technique").addEventListener("click", () => {
+  const matiere = etudeMatiereV2.value.trim();
+  const sujet = etudeSujetV2.value.trim();
+  if (!matiere || !sujet) {
+    alert("Indique une matière et un sujet avant de commencer.");
+    return;
+  }
+  demarrerSeanceEtude(etudeNiveauChoisi, matiere, sujet, etudeTechniqueChoisie);
+});
+
+document.getElementById("btn-retour-technique-etude").addEventListener("click", () => {
+  etudeSession.hidden = true;
+  etudeEtapeTechnique.hidden = false;
+});
+
 
 // ============================================================
 // ÉTUDIER AVEC MOI : séance guidée en 6 étapes (dans la session en cours)
 // ============================================================
 const etudeSession = document.getElementById("etude-session");
+const etudePlanAside = document.getElementById("etude-plan-aside");
 const etudeEtapesEl = document.getElementById("etude-etapes");
 const etudeContenuEl = document.getElementById("etude-contenu");
 const etudeBarreRemplie = document.getElementById("etude-barre-remplie");
@@ -597,22 +693,27 @@ etudeEtapesEl.querySelectorAll("li").forEach((li, i) => {
   });
 });
 
-formulaireEtude.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const sujet = etudeSujet.value.trim();
-  if (!sujet) return;
-
-  etudeContexte = { parcours: etudeParcours.value, matiere: etudeMatiere.value, sujet };
-  etudeEtapeActuelle = 0;
+function demarrerSeanceEtude(niveau, matiere, sujet, technique) {
+  etudeContexte = { parcours: niveau, matiere, sujet };
   etudeExercicesGeneres = [];
+  etudeEtapeTechnique.hidden = true;
   etudeSession.hidden = false;
+
+  if (technique === "cartementale") {
+    etudePlanAside.hidden = true;
+    afficherCarteMentale();
+    return;
+  }
+  etudePlanAside.hidden = false;
+
+  const etapeDepart = technique === "quiz" ? "quiz" : technique === "exercices" ? "exercices" : "cours";
+  etudeEtapeActuelle = ORDRE_ETAPES.indexOf(etapeDepart);
   mettreAJourPlan();
-  chargerEtape("cours");
-});
+  chargerEtape(etapeDepart);
+}
 
 function libelleParcoursPourPrompt() {
   const { parcours, matiere } = etudeContexte;
-  if (parcours === "CEPE") return `niveau CEPE (primaire, Burkina Faso), portant sur : ${matiere}`;
   return `niveau ${parcours}, matière ${matiere}`;
 }
 
@@ -1624,6 +1725,375 @@ async function demanderTableauJSON(prompt, langue) {
     }
   }
   throw derniereErreur;
+}
+
+async function demanderObjetJSON(prompt, langue) {
+  let derniereErreur;
+  for (let essai = 0; essai < 2; essai++) {
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: prompt, historique: [], langue }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+      return extraireJSONObjet(data.reponse);
+    } catch (erreur) {
+      derniereErreur = erreur;
+    }
+  }
+  throw derniereErreur;
+}
+
+// ---------- carte mentale : l'IA fournit la structure, le code dessine le schéma ----------
+function construireCarteMentaleSVG(donnees) {
+  const branches = (donnees.branches || []).slice(0, 6);
+  const largeur = 700, hauteur = 560, cx = largeur / 2, cy = hauteur / 2;
+  const rayon = 200;
+  const couleurs = ["#5fbf8a", "#5b9bd5", "#8b6fd8", "#e8b75c", "#d97b6c", "#4a9e6c"];
+
+  let contenu = "";
+  branches.forEach((branche, i) => {
+    const angle = (i / branches.length) * 2 * Math.PI - Math.PI / 2;
+    const bx = cx + rayon * Math.cos(angle);
+    const by = cy + rayon * Math.sin(angle);
+    const couleur = couleurs[i % couleurs.length];
+
+    contenu += `<line x1="${cx}" y1="${cy}" x2="${bx}" y2="${by}" stroke="${couleur}" stroke-width="2" opacity="0.5"/>`;
+    contenu += `<circle cx="${bx}" cy="${by}" r="8" fill="${couleur}"/>`;
+
+    const alignement = Math.cos(angle) > 0.3 ? "start" : Math.cos(angle) < -0.3 ? "end" : "middle";
+    const decalageX = Math.cos(angle) > 0.3 ? 14 : Math.cos(angle) < -0.3 ? -14 : 0;
+    const decalageY = Math.sin(angle) > 0 ? 24 : -14;
+
+    contenu += `<text x="${bx + decalageX}" y="${by + decalageY}" font-size="14" font-weight="700" fill="${couleur}" text-anchor="${alignement}">${echapperHtml(branche.titre || "")}</text>`;
+    (branche.points || []).slice(0, 3).forEach((point, j) => {
+      contenu += `<text x="${bx + decalageX}" y="${by + decalageY + 18 + j * 16}" font-size="11" fill="#cdd6c8" text-anchor="${alignement}">${echapperHtml(point)}</text>`;
+    });
+  });
+
+  return `
+    <svg viewBox="0 0 ${largeur} ${hauteur}" class="carte-mentale-svg">
+      ${contenu}
+      <circle cx="${cx}" cy="${cy}" r="60" fill="var(--accent)" opacity="0.9"/>
+      <foreignObject x="${cx - 55}" y="${cy - 30}" width="110" height="60">
+        <div xmlns="http://www.w3.org/1999/xhtml" style="font-size:12px;font-weight:700;color:#1c2418;text-align:center;display:flex;align-items:center;justify-content:center;height:100%;">${echapperHtml(donnees.centre || "")}</div>
+      </foreignObject>
+    </svg>
+  `;
+}
+
+async function afficherCarteMentale() {
+  etudeContenuEl.innerHTML = `<span class="etude-etiquette-etape">🧠 CARTE MENTALE</span><p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+  const { matiere, sujet } = etudeContexte;
+  const prompt = `Crée une carte mentale sur le sujet "${sujet}" (matière : ${matiere}, niveau ${etudeContexte.parcours}). ` +
+    `Réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, au format : ` +
+    `{"centre": "titre très court du sujet", "branches": [{"titre": "nom de la branche", "points": ["point clé 1", "point clé 2"]}, ...]} ` +
+    `avec entre 4 et 6 branches pertinentes.`;
+
+  try {
+    const donnees = await demanderObjetJSON(prompt, selecteurLangue.value);
+    etudeContenuEl.innerHTML = `
+      <span class="etude-etiquette-etape">🧠 CARTE MENTALE</span>
+      ${construireCarteMentaleSVG(donnees)}
+    `;
+  } catch {
+    etudeContenuEl.innerHTML = `<span class="etude-etiquette-etape">🧠 CARTE MENTALE</span><p>⚠️ ${texteTraduit("jeuxErreur")}</p>`;
+  }
+}
+
+// ============================================================
+// MATERNELLE : 5 jeux éducatifs, 100% emoji (pas d'images à charger),
+// tactile-friendly, aucun appel réseau nécessaire pour jouer
+// ============================================================
+const JEUX_MATERNELLE = [
+  { id: "tri", classe: "jeu-mat-tri", icone: "🗂️", titre: "Tri et classement", desc: "Range chaque objet dans le bon panier" },
+  { id: "memoire", classe: "jeu-mat-memoire", icone: "🧩", titre: "Jeux de mémoire", desc: "Retrouve les paires cachées" },
+  { id: "comptage", classe: "jeu-mat-comptage", icone: "🔢", titre: "Comptage", desc: "Compte les objets à l'écran" },
+  { id: "association", classe: "jeu-mat-association", icone: "🔗", titre: "Jeux d'association", desc: "Relie deux images qui vont ensemble" },
+  { id: "reconnaissance", classe: "jeu-mat-reconnaissance", icone: "👀", titre: "Reconnaissance", desc: "Trouve la bonne forme ou couleur" },
+];
+
+function rendreGrilleJeuxMaternelle() {
+  zoneJeuMaternelle.hidden = true;
+  grilleJeuxMaternelle.hidden = false;
+  grilleJeuxMaternelle.innerHTML = JEUX_MATERNELLE.map((j) => `
+    <button type="button" class="carte-jeu-maternelle ${j.classe}" data-jeu="${j.id}">
+      <span class="jeu-mat-icone">${j.icone}</span>
+      <span class="jeu-mat-titre">${j.titre}</span>
+      <span class="jeu-mat-desc">${j.desc}</span>
+    </button>
+  `).join("");
+  grilleJeuxMaternelle.querySelectorAll(".carte-jeu-maternelle").forEach((carte) => {
+    carte.addEventListener("click", () => lancerJeuMaternelle(carte.dataset.jeu));
+  });
+}
+
+function retourGrilleJeux() {
+  grilleJeuxMaternelle.hidden = false;
+  zoneJeuMaternelle.hidden = true;
+}
+
+function lancerJeuMaternelle(id) {
+  grilleJeuxMaternelle.hidden = true;
+  zoneJeuMaternelle.hidden = false;
+  if (id === "tri") lancerJeuTri();
+  else if (id === "memoire") lancerJeuMemoire();
+  else if (id === "comptage") lancerJeuComptage();
+  else if (id === "association") lancerJeuAssociation();
+  else if (id === "reconnaissance") lancerJeuReconnaissance();
+}
+
+function feteVictoireMaternelle(nomJeu, score, total) {
+  zoneJeuMaternelle.innerHTML = `
+    <div class="jeu-mat-fin">
+      🎉 Bravo ! ${score} / ${total} 🌟
+      <br><br>
+      <button type="button" class="bouton-envoyer bouton-guide" id="btn-rejouer-maternelle">🔁 Rejouer</button>
+      <button type="button" class="bouton-etape-nav" id="btn-autres-jeux-maternelle" style="margin-left:10px;">Autres jeux</button>
+    </div>
+  `;
+  document.getElementById("btn-rejouer-maternelle").addEventListener("click", () => lancerJeuMaternelle(nomJeu.id));
+  document.getElementById("btn-autres-jeux-maternelle").addEventListener("click", retourGrilleJeux);
+  enregistrerActivite("jeu", "Maternelle", nomJeu.titre, score, total);
+  if (window.speechSynthesis) lireAudioHorsLigne("Bravo, bien joué !");
+}
+
+function melanger(tableau) {
+  const copie = [...tableau];
+  for (let i = copie.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copie[i], copie[j]] = [copie[j], copie[i]];
+  }
+  return copie;
+}
+
+// ---------- 1. Tri et classement ----------
+const BANQUES_TRI = [
+  { bacs: [{ nom: "Animaux", emoji: "🐾" }, { nom: "Fruits", emoji: "🍎" }],
+    objets: [["🐶","Animaux"],["🍌","Fruits"],["🐱","Animaux"],["🍇","Fruits"],["🦁","Animaux"],["🍊","Fruits"],["🐰","Animaux"],["🍓","Fruits"]] },
+  { bacs: [{ nom: "Véhicules", emoji: "🚗" }, { nom: "Jouets", emoji: "🧸" }],
+    objets: [["🚙","Véhicules"],["🪀","Jouets"],["🚲","Véhicules"],["🎲","Jouets"],["✈️","Véhicules"],["🪁","Jouets"],["🚌","Véhicules"],["🎈","Jouets"]] },
+];
+
+function lancerJeuTri() {
+  const banque = BANQUES_TRI[Math.floor(Math.random() * BANQUES_TRI.length)];
+  const objets = melanger(banque.objets).slice(0, 6);
+  let index = 0, score = 0;
+  let objetSelectionne = null;
+
+  const afficher = () => {
+    if (index >= objets.length) {
+      feteVictoireMaternelle({ id: "tri", titre: "Tri et classement" }, score, objets.length);
+      return;
+    }
+    const [emoji] = objets[index];
+    zoneJeuMaternelle.innerHTML = `
+      <p class="jeu-mat-consigne">Range ${emoji} dans le bon panier !</p>
+      <div class="jeu-mat-score">${index + 1} / ${objets.length}</div>
+      <div class="jeu-mat-objets"><span class="bouton-jeu-mat jeu-mat-selectionne">${emoji}</span></div>
+      <div class="jeu-mat-bacs">
+        ${banque.bacs.map((b) => `<button type="button" class="bac-tri" data-bac="${b.nom}"><span style="font-size:2rem;">${b.emoji}</span><div class="bac-titre">${b.nom}</div></button>`).join("")}
+      </div>
+    `;
+    zoneJeuMaternelle.querySelectorAll(".bac-tri").forEach((bac) => {
+      bac.addEventListener("click", () => {
+        const [, bonneReponse] = objets[index];
+        const correct = bac.dataset.bac === bonneReponse;
+        bac.classList.add(correct ? "bac-actif" : "");
+        if (correct) score++;
+        if (window.speechSynthesis) lireAudioHorsLigne(correct ? "Bravo !" : "Essaie encore la prochaine fois !");
+        setTimeout(() => { index++; afficher(); }, 700);
+      });
+    });
+  };
+  afficher();
+}
+
+// ---------- 2. Jeux de mémoire ----------
+const EMOJIS_MEMOIRE = ["🐶","🐱","🐰","🦁","🐸","🐵","🦋","🐝","🐦","🐟","🌸","⭐"];
+
+function lancerJeuMemoire() {
+  const paires = melanger(EMOJIS_MEMOIRE).slice(0, 6);
+  const cartes = melanger([...paires, ...paires]);
+  let retournees = [];
+  let trouvees = 0;
+  let bloque = false;
+
+  zoneJeuMaternelle.innerHTML = `
+    <p class="jeu-mat-consigne">Retrouve les paires !</p>
+    <div class="jeu-mat-score" id="memoire-score">0 / ${paires.length} paires</div>
+    <div class="grille-memoire" id="grille-memoire-jeu">
+      ${cartes.map((_, i) => `<button type="button" class="carte-memoire" data-index="${i}">❔</button>`).join("")}
+    </div>
+  `;
+
+  const boutons = zoneJeuMaternelle.querySelectorAll(".carte-memoire");
+  boutons.forEach((bouton) => {
+    bouton.addEventListener("click", () => {
+      const i = Number(bouton.dataset.index);
+      if (bloque || bouton.classList.contains("trouvee") || retournees.includes(i)) return;
+
+      bouton.textContent = cartes[i];
+      bouton.classList.add("retournee");
+      retournees.push(i);
+
+      if (retournees.length === 2) {
+        bloque = true;
+        const [a, b] = retournees;
+        if (cartes[a] === cartes[b]) {
+          boutons[a].classList.add("trouvee");
+          boutons[b].classList.add("trouvee");
+          trouvees++;
+          document.getElementById("memoire-score").textContent = `${trouvees} / ${paires.length} paires`;
+          retournees = [];
+          bloque = false;
+          if (trouvees === paires.length) {
+            setTimeout(() => feteVictoireMaternelle({ id: "memoire", titre: "Jeux de mémoire" }, trouvees, paires.length), 500);
+          }
+        } else {
+          setTimeout(() => {
+            boutons[a].textContent = "❔";
+            boutons[b].textContent = "❔";
+            boutons[a].classList.remove("retournee");
+            boutons[b].classList.remove("retournee");
+            retournees = [];
+            bloque = false;
+          }, 800);
+        }
+      }
+    });
+  });
+}
+
+// ---------- 3. Comptage ----------
+const OBJETS_COMPTAGE = ["🍎","⭐","🎈","🐟","🌸","🍓","🦋","🐝"];
+
+function lancerJeuComptage() {
+  let index = 0, score = 0;
+  const rondes = 5;
+
+  const afficher = () => {
+    if (index >= rondes) {
+      feteVictoireMaternelle({ id: "comptage", titre: "Comptage" }, score, rondes);
+      return;
+    }
+    const emoji = OBJETS_COMPTAGE[Math.floor(Math.random() * OBJETS_COMPTAGE.length)];
+    const nombre = Math.floor(Math.random() * 8) + 2; // 2 à 9
+    const choix = melanger([nombre, nombre + 1, Math.max(1, nombre - 1), nombre + 2].filter((n, i, arr) => arr.indexOf(n) === i)).slice(0, 4);
+
+    zoneJeuMaternelle.innerHTML = `
+      <p class="jeu-mat-consigne">Combien y a-t-il de ${emoji} ?</p>
+      <div class="jeu-mat-score">${index + 1} / ${rondes}</div>
+      <div class="jeu-mat-objets">${emoji.repeat(nombre).split("").map((e) => `<span>${e}</span>`).join("")}</div>
+      <div class="jeu-mat-choix">${choix.map((c) => `<button type="button" class="bouton-jeu-mat" data-valeur="${c}">${c}</button>`).join("")}</div>
+    `;
+    zoneJeuMaternelle.querySelectorAll(".bouton-jeu-mat").forEach((bouton) => {
+      bouton.addEventListener("click", () => {
+        const correct = Number(bouton.dataset.valeur) === nombre;
+        bouton.classList.add(correct ? "jeu-mat-correct" : "jeu-mat-incorrect");
+        if (correct) score++;
+        if (window.speechSynthesis) lireAudioHorsLigne(correct ? "Bravo !" : "Presque, réessaie !");
+        setTimeout(() => { index++; afficher(); }, 700);
+      });
+    });
+  };
+  afficher();
+}
+
+// ---------- 4. Jeux d'association ----------
+const PAIRES_ASSOCIATION = [
+  ["🐄","🥛"], ["🐝","🍯"], ["🌧️","☂️"], ["🔑","🔒"], ["✂️","📄"],
+  ["🖊️","📝"], ["🌙","⭐"], ["☀️","🌻"], ["🐔","🥚"], ["🌳","🍃"],
+];
+
+function lancerJeuAssociation() {
+  const paires = melanger(PAIRES_ASSOCIATION).slice(0, 4);
+  const gauche = paires.map((p) => p[0]);
+  const droite = melanger(paires.map((p) => p[1]));
+  let selectionGauche = null;
+  let trouvees = 0;
+
+  const rendre = () => {
+    zoneJeuMaternelle.innerHTML = `
+      <p class="jeu-mat-consigne">Relie ce qui va ensemble !</p>
+      <div class="jeu-mat-score">${trouvees} / ${paires.length}</div>
+      <div class="jeu-mat-colonnes">
+        <div class="jeu-mat-colonne">${gauche.map((e) => `<button type="button" class="bouton-jeu-mat" data-emoji="${e}">${e}</button>`).join("")}</div>
+        <div class="jeu-mat-colonne">${droite.map((e) => `<button type="button" class="bouton-jeu-mat" data-emoji="${e}">${e}</button>`).join("")}</div>
+      </div>
+    `;
+    zoneJeuMaternelle.querySelectorAll(".jeu-mat-colonne:first-child .bouton-jeu-mat").forEach((b) => {
+      b.addEventListener("click", () => {
+        zoneJeuMaternelle.querySelectorAll(".jeu-mat-colonne:first-child .bouton-jeu-mat").forEach((x) => x.classList.remove("jeu-mat-selectionne"));
+        b.classList.add("jeu-mat-selectionne");
+        selectionGauche = b.dataset.emoji;
+      });
+    });
+    zoneJeuMaternelle.querySelectorAll(".jeu-mat-colonne:last-child .bouton-jeu-mat").forEach((b) => {
+      b.addEventListener("click", () => {
+        if (!selectionGauche) return;
+        const bonnePaire = paires.find((p) => p[0] === selectionGauche);
+        const correct = bonnePaire && bonnePaire[1] === b.dataset.emoji;
+        if (correct) {
+          trouvees++;
+          if (window.speechSynthesis) lireAudioHorsLigne("Bravo !");
+          if (trouvees === paires.length) {
+            setTimeout(() => feteVictoireMaternelle({ id: "association", titre: "Jeux d'association" }, trouvees, paires.length), 400);
+            return;
+          }
+          // retire la paire trouvée de l'affichage
+          const iG = gauche.indexOf(selectionGauche); if (iG > -1) gauche.splice(iG, 1);
+          const iD = droite.indexOf(b.dataset.emoji); if (iD > -1) droite.splice(iD, 1);
+          selectionGauche = null;
+          rendre();
+        } else {
+          b.classList.add("jeu-mat-incorrect");
+          if (window.speechSynthesis) lireAudioHorsLigne("Essaie encore !");
+          setTimeout(() => b.classList.remove("jeu-mat-incorrect"), 500);
+        }
+      });
+    });
+  };
+  rendre();
+}
+
+// ---------- 5. Reconnaissance (formes et couleurs) ----------
+const FORMES_RECONNAISSANCE = [
+  { nom: "carré rouge", emoji: "🟥" }, { nom: "carré bleu", emoji: "🟦" }, { nom: "carré jaune", emoji: "🟨" },
+  { nom: "cercle rouge", emoji: "🔴" }, { nom: "cercle bleu", emoji: "🔵" }, { nom: "cercle jaune", emoji: "🟡" },
+  { nom: "triangle rouge", emoji: "🔺" }, { nom: "étoile jaune", emoji: "⭐" }, { nom: "cœur rouge", emoji: "❤️" },
+];
+
+function lancerJeuReconnaissance() {
+  let index = 0, score = 0;
+  const rondes = 5;
+
+  const afficher = () => {
+    if (index >= rondes) {
+      feteVictoireMaternelle({ id: "reconnaissance", titre: "Reconnaissance" }, score, rondes);
+      return;
+    }
+    const choix = melanger(FORMES_RECONNAISSANCE).slice(0, 4);
+    const cible = choix[Math.floor(Math.random() * choix.length)];
+
+    zoneJeuMaternelle.innerHTML = `
+      <p class="jeu-mat-consigne">Trouve le ${cible.nom} !</p>
+      <div class="jeu-mat-score">${index + 1} / ${rondes}</div>
+      <div class="jeu-mat-choix">${melanger(choix).map((f) => `<button type="button" class="bouton-jeu-mat" data-nom="${f.nom}" style="font-size:2.2rem;">${f.emoji}</button>`).join("")}</div>
+    `;
+    zoneJeuMaternelle.querySelectorAll(".bouton-jeu-mat").forEach((bouton) => {
+      bouton.addEventListener("click", () => {
+        const correct = bouton.dataset.nom === cible.nom;
+        bouton.classList.add(correct ? "jeu-mat-correct" : "jeu-mat-incorrect");
+        if (correct) score++;
+        if (window.speechSynthesis) lireAudioHorsLigne(correct ? "Bravo !" : "Essaie encore !");
+        setTimeout(() => { index++; afficher(); }, 700);
+      });
+    });
+  };
+  afficher();
 }
 
 // ============================================================

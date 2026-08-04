@@ -25,7 +25,7 @@
       <span class="craie-point"></span>
       <h1>INOUS<span class="point-final">.AI</span></h1>
     </div>
-    <p class="sous-titre" data-i18n="sousTitre">Assistant éducatif</p>
+    <p class="sous-titre" data-i18n="sousTitre">L'intelligence artificielle pour améliorer ton apprentissage</p>
 
     <nav class="modes">
       <button class="mode-btn actif" data-mode="chat">
@@ -133,40 +133,54 @@
     <!-- ===== Mode Étudier avec moi : parcours guidé en étapes ===== -->
     <div class="ecran-dedie ecran-etude-avancee" id="ecran-etude" hidden>
 
-      <div class="etude-entete">
-        <div>
-          <h2 data-i18n="etudeTitre">Étudier avec moi</h2>
-          <p class="guide-desc" data-i18n="etudeDesc">Ton parcours d'apprentissage guidé, étape par étape.</p>
+      <!-- Étape 1 : choisir son niveau -->
+      <div class="etude-etape-niveau" id="etude-etape-niveau">
+        <h2 data-i18n="etudeTitre">Étudier avec moi</h2>
+        <p class="guide-desc">Choisis ton niveau</p>
+        <div class="grille-niveaux-etude" id="grille-niveaux-etude"></div>
+      </div>
+
+      <!-- Étape 2 : choisir une technique d'apprentissage -->
+      <div class="etude-etape-technique" id="etude-etape-technique" hidden>
+        <button type="button" class="bouton-etape-nav" id="btn-retour-niveau-etude">← Changer de niveau</button>
+        <h2 id="etude-niveau-choisi-titre"></h2>
+        <p class="guide-desc">Choisis une technique d'apprentissage</p>
+        <div class="grille-techniques" id="grille-techniques"></div>
+
+        <div class="etude-sujet-formulaire" id="etude-sujet-formulaire" hidden>
+          <div class="etude-champ">
+            <label>Matière</label>
+            <input type="text" id="etude-matiere-v2" placeholder="Ex : Mathématiques, Français…">
+          </div>
+          <div class="etude-champ">
+            <label>Sujet précis</label>
+            <input type="text" id="etude-sujet-v2" placeholder="Ex : les fractions, la dérivation…">
+          </div>
+          <button type="button" class="bouton-envoyer bouton-guide" id="btn-commencer-technique">Commencer</button>
         </div>
       </div>
 
-      <form id="formulaire-etude" class="etude-selecteurs">
-        <div class="etude-champ">
-          <label data-i18n="etudeLabelParcours">Parcours</label>
-          <select id="etude-parcours">
-            <option value="CEPE">CEPE</option>
-            <option value="BEPC">BEPC</option>
-            <option value="BAC A">BAC A</option>
-            <option value="BAC C" selected>BAC C</option>
-            <option value="Université">Université</option>
-          </select>
+      <!-- ===== Écran dédié Maternelle : jeux éducatifs ===== -->
+      <div class="etude-etape-maternelle" id="etude-etape-maternelle" hidden>
+        <button type="button" class="bouton-etape-nav" id="btn-retour-niveau-maternelle">← Changer de niveau</button>
+
+        <div class="maternelle-entete">
+          <span class="maternelle-etoile">⭐</span>
+          <div>
+            <h2>Maternelle</h2>
+            <p class="guide-desc">Apprendre en jouant, grandir en s'amusant !</p>
+          </div>
         </div>
-        <span class="etude-fleche">→</span>
-        <div class="etude-champ">
-          <label data-i18n="etudeLabelMatiere">Matière</label>
-          <select id="etude-matiere"></select>
-        </div>
-        <span class="etude-fleche">→</span>
-        <div class="etude-champ etude-champ-large">
-          <label data-i18n="etudeLabelSujet">Sujet / Chapitre</label>
-          <input type="text" id="etude-sujet" placeholder="Ex : les fractions, la dérivation…" data-i18n-placeholder="etudePlaceholderSujet">
-        </div>
-        <button type="submit" class="bouton-envoyer bouton-guide" data-i18n="etudeBouton">Commencer la séance</button>
-      </form>
+
+        <div class="grille-jeux-maternelle" id="grille-jeux-maternelle"></div>
+        <div class="zone-jeu-maternelle" id="zone-jeu-maternelle" hidden></div>
+      </div>
 
       <div class="etude-session" id="etude-session" hidden>
 
-        <aside class="etude-plan">
+        <button type="button" class="bouton-etape-nav" id="btn-retour-technique-etude">← Changer de technique</button>
+
+        <aside class="etude-plan" id="etude-plan-aside">
           <h3 data-i18n="etudePlanTitre">Plan de la séance</h3>
           <ol class="etude-etapes" id="etude-etapes">
             <li data-etape="cours" class="etape-active"><span class="etape-num">1</span><div><strong data-i18n="etapeCours">Cours</strong><small data-i18n="etapeCoursDesc">Comprendre la leçon</small></div></li>

@@ -86,6 +86,7 @@ CONSIGNE_STRUCTURE = (
 )
 
 
+
 INSTRUCTIONS_STATUT = {
     "eleve": "L'utilisateur est un élève. Explique de façon pédagogique, encourageante, adaptée à un niveau scolaire.",
     "enseignant": "L'utilisateur est un enseignant. Tu peux être plus technique, proposer des pistes pédagogiques, "
