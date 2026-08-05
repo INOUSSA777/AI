@@ -1813,6 +1813,12 @@ const JEUX_MATERNELLE = [
   { id: "comptage", classe: "jeu-mat-comptage", icone: "🔢", titre: "Comptage", desc: "Compte les objets à l'écran" },
   { id: "association", classe: "jeu-mat-association", icone: "🔗", titre: "Jeux d'association", desc: "Relie deux images qui vont ensemble" },
   { id: "reconnaissance", classe: "jeu-mat-reconnaissance", icone: "👀", titre: "Reconnaissance", desc: "Trouve la bonne forme ou couleur" },
+  { id: "coloriage", classe: "jeu-mat-coloriage", icone: "🎨", titre: "Coloriage", desc: "Colorie le dessin comme tu veux" },
+  { id: "puzzle", classe: "jeu-mat-puzzle", icone: "🧷", titre: "Puzzle", desc: "Remets les pièces dans le bon ordre" },
+  { id: "labyrinthe", classe: "jeu-mat-labyrinthe", icone: "🌀", titre: "Labyrinthes", desc: "Trouve le bon chemin jusqu'à l'arrivée" },
+  { id: "completer", classe: "jeu-mat-completer", icone: "🧩", titre: "Compléter l'image", desc: "Devine ce qui manque" },
+  { id: "chansons", classe: "jeu-mat-chansons", icone: "🎵", titre: "Chansons et comptines", desc: "Une petite comptine rien que pour toi" },
+  { id: "maitre", classe: "jeu-mat-maitre", icone: "👨‍🏫", titre: "Mon Maître", desc: "Une vraie leçon avec ton professeur" },
 ];
 
 function rendreGrilleJeuxMaternelle() {
@@ -1843,6 +1849,12 @@ function lancerJeuMaternelle(id) {
   else if (id === "comptage") lancerJeuComptage();
   else if (id === "association") lancerJeuAssociation();
   else if (id === "reconnaissance") lancerJeuReconnaissance();
+  else if (id === "coloriage") lancerJeuColoriage();
+  else if (id === "puzzle") lancerJeuPuzzle();
+  else if (id === "labyrinthe") lancerJeuLabyrinthe();
+  else if (id === "completer") lancerJeuCompleter();
+  else if (id === "chansons") lancerJeuChansons();
+  else if (id === "maitre") lancerMonMaitre();
 }
 
 function feteVictoireMaternelle(nomJeu, score, total) {
@@ -2094,6 +2106,490 @@ function lancerJeuReconnaissance() {
     });
   };
   afficher();
+}
+
+// ---------- 6. Coloriage (clic pour remplir une zone, façon album à colorier) ----------
+const SCENES_COLORIAGE = [
+  { nom: "Maison", largeur: 300, hauteur: 260, parties: [
+    { id: "ciel", el: "rect", attrs: { x: 0, y: 0, width: 300, height: 260 }, defaut: "#cfe8ff" },
+    { id: "soleil", el: "circle", attrs: { cx: 250, cy: 45, r: 28 }, defaut: "#e5e5e5" },
+    { id: "toit", el: "polygon", attrs: { points: "40,120 150,40 260,120" }, defaut: "#e5e5e5" },
+    { id: "mur", el: "rect", attrs: { x: 60, y: 120, width: 180, height: 120 }, defaut: "#e5e5e5" },
+    { id: "porte", el: "rect", attrs: { x: 135, y: 170, width: 40, height: 70 }, defaut: "#e5e5e5" },
+    { id: "fenetre", el: "rect", attrs: { x: 80, y: 150, width: 35, height: 35 }, defaut: "#e5e5e5" },
+  ]},
+  { nom: "Fleur", largeur: 260, hauteur: 220, parties: [
+    { id: "tige", el: "rect", attrs: { x: 122, y: 140, width: 16, height: 80 }, defaut: "#e5e5e5" },
+    { id: "centre", el: "circle", attrs: { cx: 130, cy: 110, r: 22 }, defaut: "#e5e5e5" },
+    { id: "petale1", el: "circle", attrs: { cx: 130, cy: 70, r: 22 }, defaut: "#e5e5e5" },
+    { id: "petale2", el: "circle", attrs: { cx: 170, cy: 110, r: 22 }, defaut: "#e5e5e5" },
+    { id: "petale3", el: "circle", attrs: { cx: 130, cy: 150, r: 22 }, defaut: "#e5e5e5" },
+    { id: "petale4", el: "circle", attrs: { cx: 90, cy: 110, r: 22 }, defaut: "#e5e5e5" },
+  ]},
+  { nom: "Poisson", largeur: 300, hauteur: 200, parties: [
+    { id: "eau", el: "rect", attrs: { x: 0, y: 0, width: 300, height: 200 }, defaut: "#cfe8ff" },
+    { id: "corps", el: "ellipse", attrs: { cx: 150, cy: 100, rx: 80, ry: 45 }, defaut: "#e5e5e5" },
+    { id: "queue", el: "polygon", attrs: { points: "70,100 20,70 20,130" }, defaut: "#e5e5e5" },
+    { id: "nageoire", el: "polygon", attrs: { points: "150,70 170,40 190,75" }, defaut: "#e5e5e5" },
+    { id: "oeil", el: "circle", attrs: { cx: 195, cy: 85, r: 8 }, defaut: "#1c2418" },
+  ]},
+];
+const PALETTE_COLORIAGE = ["#d97b8f", "#5b9bd5", "#5fbf8a", "#e8b75c", "#8b6fd8", "#e8734f", "#f2efe2", "#1c2418"];
+
+function lancerJeuColoriage() {
+  const scene = SCENES_COLORIAGE[Math.floor(Math.random() * SCENES_COLORIAGE.length)];
+  let couleurChoisie = PALETTE_COLORIAGE[0];
+
+  zoneJeuMaternelle.innerHTML = `
+    <p class="jeu-mat-consigne">Colorie le dessin : ${scene.nom} !</p>
+    <div class="coloriage-palette" id="coloriage-palette">
+      ${PALETTE_COLORIAGE.map((c, i) => `<button type="button" class="pastille-couleur ${i === 0 ? "couleur-active" : ""}" data-couleur="${c}" style="background:${c};"></button>`).join("")}
+    </div>
+    <svg viewBox="0 0 ${scene.largeur} ${scene.hauteur}" class="coloriage-svg" id="coloriage-svg"></svg>
+    <button type="button" class="bouton-envoyer bouton-guide" id="btn-fini-coloriage" style="margin-top:16px;">✅ J'ai fini !</button>
+  `;
+
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svgEl = document.getElementById("coloriage-svg");
+  scene.parties.forEach((p) => {
+    const el = document.createElementNS(svgNS, p.el);
+    Object.entries(p.attrs).forEach(([k, v]) => el.setAttribute(k, v));
+    el.setAttribute("fill", p.defaut);
+    el.setAttribute("stroke", "#00000033");
+    el.setAttribute("stroke-width", "2");
+    el.style.cursor = "pointer";
+    el.addEventListener("click", (evenement) => {
+      el.setAttribute("fill", couleurChoisie);
+      const etincelle = document.createElement("span");
+      etincelle.className = "etincelle-coloriage";
+      etincelle.textContent = "✨";
+      etincelle.style.left = evenement.clientX + "px";
+      etincelle.style.top = evenement.clientY + "px";
+      document.body.appendChild(etincelle);
+      setTimeout(() => etincelle.remove(), 600);
+    });
+    svgEl.appendChild(el);
+  });
+
+  document.querySelectorAll(".pastille-couleur").forEach((bouton) => {
+    bouton.addEventListener("click", () => {
+      document.querySelectorAll(".pastille-couleur").forEach((b) => b.classList.remove("couleur-active"));
+      bouton.classList.add("couleur-active");
+      couleurChoisie = bouton.dataset.couleur;
+    });
+  });
+
+  document.getElementById("btn-fini-coloriage").addEventListener("click", () => {
+    feteVictoireMaternelle({ id: "coloriage", titre: "Coloriage" }, 1, 1);
+  });
+}
+
+// ---------- 7. Puzzle (remettre les pièces dans le bon ordre, par échange) ----------
+const SCENES_PUZZLE = [
+  ["🌞", "☁️", "🌈", "☁️"],
+  ["🐟", "🌊", "🐠", "🌊"],
+  ["🌳", "🍎", "🌳", "🍏"],
+  ["🚗", "🚦", "🚌", "🚏"],
+];
+
+function lancerJeuPuzzle() {
+  const cible = SCENES_PUZZLE[Math.floor(Math.random() * SCENES_PUZZLE.length)];
+  let etat = melanger(cible);
+  while (etat.every((e, i) => e === cible[i])) etat = melanger(cible);
+  let premierChoix = null;
+
+  const rendre = () => {
+    zoneJeuMaternelle.innerHTML = `
+      <p class="jeu-mat-consigne">Remets les pièces comme le modèle !</p>
+      <div class="puzzle-modele">${cible.map((e) => `<span>${e}</span>`).join("")}</div>
+      <div class="jeu-mat-choix" id="puzzle-tuiles">
+        ${etat.map((e, i) => `<button type="button" class="bouton-jeu-mat" data-index="${i}">${e}</button>`).join("")}
+      </div>
+    `;
+    zoneJeuMaternelle.querySelectorAll("#puzzle-tuiles .bouton-jeu-mat").forEach((bouton) => {
+      bouton.addEventListener("click", () => {
+        const i = Number(bouton.dataset.index);
+        if (premierChoix === null) {
+          premierChoix = i;
+          bouton.classList.add("jeu-mat-selectionne");
+        } else if (premierChoix === i) {
+          premierChoix = null;
+          rendre();
+        } else {
+          [etat[premierChoix], etat[i]] = [etat[i], etat[premierChoix]];
+          premierChoix = null;
+          if (etat.every((e, idx) => e === cible[idx])) {
+            setTimeout(() => feteVictoireMaternelle({ id: "puzzle", titre: "Puzzle" }, 1, 1), 300);
+          } else {
+            rendre();
+          }
+        }
+      });
+    });
+  };
+  rendre();
+}
+
+// ---------- 8. Labyrinthes (génération réelle, navigation par flèches) ----------
+function genererLabyrinthe(taille) {
+  const cellules = Array.from({ length: taille }, () =>
+    Array.from({ length: taille }, () => ({ N: true, E: true, S: true, O: true, visite: false }))
+  );
+  const pile = [[0, 0]];
+  cellules[0][0].visite = true;
+  const dirs = [["N", 0, -1, "S"], ["E", 1, 0, "O"], ["S", 0, 1, "N"], ["O", -1, 0, "E"]];
+
+  while (pile.length) {
+    const [x, y] = pile[pile.length - 1];
+    const voisins = dirs
+      .map(([dir, dx, dy, opp]) => ({ dir, opp, nx: x + dx, ny: y + dy }))
+      .filter((v) => v.nx >= 0 && v.nx < taille && v.ny >= 0 && v.ny < taille && !cellules[v.ny][v.nx].visite);
+    if (!voisins.length) { pile.pop(); continue; }
+    const v = voisins[Math.floor(Math.random() * voisins.length)];
+    cellules[y][x][v.dir] = false;
+    cellules[v.ny][v.nx][v.opp] = false;
+    cellules[v.ny][v.nx].visite = true;
+    pile.push([v.nx, v.ny]);
+  }
+  return cellules;
+}
+
+function lancerJeuLabyrinthe() {
+  const taille = 6;
+  const grille = genererLabyrinthe(taille);
+  const joueur = { x: 0, y: 0 };
+  const arrivee = { x: taille - 1, y: taille - 1 };
+
+  let cases = "";
+  for (let y = 0; y < taille; y++) {
+    for (let x = 0; x < taille; x++) {
+      const c = grille[y][x];
+      const classes = ["labyrinthe-case"];
+      if (c.N) classes.push("mur-n");
+      if (c.E) classes.push("mur-e");
+      if (c.S) classes.push("mur-s");
+      if (c.O) classes.push("mur-o");
+      const contenu = arrivee.x === x && arrivee.y === y ? "🏁" : "";
+      cases += `<div class="${classes.join(" ")}" data-x="${x}" data-y="${y}">${contenu}</div>`;
+    }
+  }
+
+  zoneJeuMaternelle.innerHTML = `
+    <p class="jeu-mat-consigne">Aide 🧒 à trouver la sortie 🏁 !</p>
+    <div class="labyrinthe-conteneur">
+      <div class="labyrinthe-grille" id="labyrinthe-grille" style="grid-template-columns:repeat(${taille},1fr);">${cases}</div>
+      <div class="labyrinthe-joueur" id="labyrinthe-joueur">🧒</div>
+    </div>
+    <div class="labyrinthe-controles">
+      <div></div><button type="button" class="bouton-jeu-mat" data-dir="N">⬆️</button><div></div>
+      <button type="button" class="bouton-jeu-mat" data-dir="O">⬅️</button><div></div><button type="button" class="bouton-jeu-mat" data-dir="E">➡️</button>
+      <div></div><button type="button" class="bouton-jeu-mat" data-dir="S">⬇️</button><div></div>
+    </div>
+  `;
+
+  const positionnerJoueur = () => {
+    const celluleEl = document.querySelector(`#labyrinthe-grille [data-x="${joueur.x}"][data-y="${joueur.y}"]`);
+    const joueurEl = document.getElementById("labyrinthe-joueur");
+    if (!celluleEl || !joueurEl) return;
+    joueurEl.style.width = celluleEl.offsetWidth + "px";
+    joueurEl.style.height = celluleEl.offsetHeight + "px";
+    joueurEl.style.left = celluleEl.offsetLeft + "px";
+    joueurEl.style.top = celluleEl.offsetTop + "px";
+  };
+  positionnerJoueur();
+
+  zoneJeuMaternelle.querySelectorAll("[data-dir]").forEach((bouton) => {
+    bouton.addEventListener("click", () => {
+      const dir = bouton.dataset.dir;
+      const c = grille[joueur.y][joueur.x];
+      if (dir === "N" && !c.N) joueur.y--;
+      else if (dir === "S" && !c.S) joueur.y++;
+      else if (dir === "E" && !c.E) joueur.x++;
+      else if (dir === "O" && !c.O) joueur.x--;
+      positionnerJoueur(); // le glissement est animé par la transition CSS
+      if (joueur.x === arrivee.x && joueur.y === arrivee.y) {
+        setTimeout(() => feteVictoireMaternelle({ id: "labyrinthe", titre: "Labyrinthes" }, 1, 1), 350);
+      }
+    });
+  });
+}
+
+// ---------- 9. Compléter l'image (deviner l'élément manquant d'une suite) ----------
+const SCENES_COMPLETER = [
+  { sequence: ["🍎", "🍌", "❓", "🍇", "🍊"], manquant: "🍓", distracteurs: ["🚗", "⭐", "🐶"] },
+  { sequence: ["🔴", "🟡", "❓", "🔴", "🟡"], manquant: "🟢", distracteurs: ["🐱", "📚", "🎈"] },
+  { sequence: ["🐱", "🐶", "❓", "🐰", "🐭"], manquant: "🐹", distracteurs: ["🚙", "🍕", "⚽"] },
+  { sequence: ["1️⃣", "2️⃣", "❓", "4️⃣", "5️⃣"], manquant: "3️⃣", distracteurs: ["🐸", "🌙", "🎵"] },
+];
+
+function lancerJeuCompleter() {
+  const scene = SCENES_COMPLETER[Math.floor(Math.random() * SCENES_COMPLETER.length)];
+  const choix = melanger([scene.manquant, ...scene.distracteurs]);
+
+  zoneJeuMaternelle.innerHTML = `
+    <p class="jeu-mat-consigne">Que manque-t-il pour compléter ?</p>
+    <div class="jeu-mat-objets">${scene.sequence.map((e) => `<span>${e}</span>`).join("")}</div>
+    <div class="jeu-mat-choix">${choix.map((c) => `<button type="button" class="bouton-jeu-mat" data-val="${c}" style="font-size:2rem;">${c}</button>`).join("")}</div>
+  `;
+  zoneJeuMaternelle.querySelectorAll(".bouton-jeu-mat").forEach((bouton) => {
+    bouton.addEventListener("click", () => {
+      const correct = bouton.dataset.val === scene.manquant;
+      bouton.classList.add(correct ? "jeu-mat-correct" : "jeu-mat-incorrect");
+      if (window.speechSynthesis) lireAudioHorsLigne(correct ? "Bravo !" : "Pas tout à fait !");
+      setTimeout(() => feteVictoireMaternelle({ id: "completer", titre: "Compléter l'image" }, correct ? 1 : 0, 1), 700);
+    });
+  });
+}
+
+// ---------- 10. Chansons et comptines (comptine ORIGINALE générée par l'IA — jamais
+// de vraies paroles existantes reproduites, pour respecter le droit d'auteur) ----------
+function lancerJeuChansons() {
+  zoneJeuMaternelle.innerHTML = `
+    <p class="jeu-mat-consigne">Choisis un thème pour ta comptine !</p>
+    <div class="jeu-mat-choix">
+      <button type="button" class="bouton-jeu-mat" data-theme="les animaux" style="font-size:1.1rem;">🐾 Animaux</button>
+      <button type="button" class="bouton-jeu-mat" data-theme="les couleurs" style="font-size:1.1rem;">🌈 Couleurs</button>
+      <button type="button" class="bouton-jeu-mat" data-theme="compter jusqu'à 5" style="font-size:1.1rem;">🔢 Chiffres</button>
+    </div>
+  `;
+  zoneJeuMaternelle.querySelectorAll(".bouton-jeu-mat").forEach((bouton) => {
+    bouton.addEventListener("click", () => genererComptine(bouton.dataset.theme));
+  });
+}
+
+async function genererComptine(theme) {
+  zoneJeuMaternelle.innerHTML = `<p class="jeu-mat-consigne">🎵 Ta comptine arrive…</p><p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+  const prompt = `Invente une toute petite comptine originale et joyeuse pour un enfant de maternelle, sur le thème "${theme}". ` +
+    `4 à 6 lignes courtes et rythmées, simples, en français. Réponds uniquement avec le texte de la comptine, rien d'autre.`;
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: prompt, historique: [], langue: selecteurLangue.value }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+
+    zoneJeuMaternelle.innerHTML = `
+      <p class="jeu-mat-consigne">🎵 Ta comptine</p>
+      <div class="comptine-texte">${echapperHtml(data.reponse).replace(/\n/g, "<br>")}</div>
+      <button type="button" class="bouton-envoyer bouton-guide" id="btn-ecouter-comptine">🔊 Écouter</button>
+      <button type="button" class="bouton-etape-nav" id="btn-fini-comptine" style="margin-left:10px;">✅ Terminé</button>
+    `;
+    document.getElementById("btn-ecouter-comptine").addEventListener("click", () => lireAudioHorsLigne(data.reponse));
+    document.getElementById("btn-fini-comptine").addEventListener("click", () => {
+      feteVictoireMaternelle({ id: "chansons", titre: "Chansons et comptines" }, 1, 1);
+    });
+  } catch (erreur) {
+    zoneJeuMaternelle.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
+  }
+}
+
+// ============================================================
+// MON MAÎTRE : une vraie leçon expliquée par un professeur illustré,
+// avatar animé (clignement, "parole" visuelle pendant la lecture audio),
+// contrôles audio réels. Honnêteté : même voix pour tous les professeurs
+// (un seul moteur TTS disponible), pas de vraie synchronisation labiale.
+// ============================================================
+const PROFESSEURS_MAITRE = [
+  { id: "awa", nom: "Maîtresse Awa", avatar: "👩🏾‍🏫", couleur: "#d97b8f" },
+  { id: "oumar", nom: "Maître Oumar", avatar: "👨🏾‍🏫", couleur: "#5b9bd5" },
+  { id: "mariam", nom: "Maîtresse Mariam", avatar: "👩🏿‍🏫", couleur: "#5fbf8a" },
+];
+
+let professeurChoisi = PROFESSEURS_MAITRE[0];
+let audioMaitre = null;
+
+function lancerMonMaitre() {
+  zoneJeuMaternelle.innerHTML = `
+    <p class="jeu-mat-consigne">👨‍🏫 Choisis ton maître</p>
+    <p class="guide-desc" style="text-align:center;">Tous les maîtres ont la même voix pour l'instant — seul le personnage change.</p>
+    <div class="jeu-mat-choix" id="choix-professeur">
+      ${PROFESSEURS_MAITRE.map((p) => `
+        <button type="button" class="carte-professeur" data-prof="${p.id}" style="border-color:${p.couleur};">
+          <span style="font-size:2.2rem;">${p.avatar}</span>
+          <span>${p.nom}</span>
+        </button>
+      `).join("")}
+    </div>
+  `;
+  zoneJeuMaternelle.querySelectorAll(".carte-professeur").forEach((bouton) => {
+    bouton.addEventListener("click", () => {
+      professeurChoisi = PROFESSEURS_MAITRE.find((p) => p.id === bouton.dataset.prof);
+      afficherSalleDeClasse();
+    });
+  });
+}
+
+function afficherSalleDeClasse() {
+  zoneJeuMaternelle.innerHTML = `
+    <div class="salle-classe">
+      <div class="avatar-maitre-zone">
+        <div class="avatar-maitre" id="avatar-maitre" style="background:${professeurChoisi.couleur}33;">
+          <span class="avatar-maitre-visage" id="avatar-visage">${professeurChoisi.avatar}</span>
+          <span class="baton-maitre" id="baton-maitre">📏</span>
+        </div>
+        <p class="avatar-maitre-nom">${professeurChoisi.nom}</p>
+      </div>
+      <div class="tableau-maitre">
+        <div class="etude-champ">
+          <label>Que veux-tu apprendre aujourd'hui ?</label>
+          <input type="text" id="sujet-maitre-input" placeholder="Ex : les couleurs, compter jusqu'à 10, les animaux…">
+        </div>
+        <button type="button" class="bouton-envoyer bouton-guide" id="btn-demarrer-cours-maitre">▶ Commencer le cours</button>
+        <div id="tableau-maitre-contenu"></div>
+      </div>
+    </div>
+  `;
+  document.getElementById("btn-demarrer-cours-maitre").addEventListener("click", () => {
+    const sujet = document.getElementById("sujet-maitre-input").value.trim();
+    if (!sujet) { alert("Dis à ton maître ce que tu veux apprendre !"); return; }
+    demarrerCoursMaitre(sujet);
+  });
+}
+
+async function demarrerCoursMaitre(sujet) {
+  const contenu = document.getElementById("tableau-maitre-contenu");
+  contenu.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+
+  const prompt = `Tu es un enseignant chaleureux pour un enfant de maternelle. Explique "${sujet}" de façon très simple et joyeuse, ` +
+    `4 à 5 phrases courtes maximum, comme si tu parlais à voix haute à l'enfant, avec des encouragements.`;
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: prompt, historique: [], langue: selecteurLangue.value }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+
+    contenu.innerHTML = `
+      <div class="tableau-texte">${echapperHtml(data.reponse)}</div>
+      <div class="maitre-controles">
+        <button type="button" class="bouton-jeu-mat" id="btn-play-maitre" title="Lire">▶️</button>
+        <button type="button" class="bouton-jeu-mat" id="btn-pause-maitre" title="Pause">⏸️</button>
+        <button type="button" class="bouton-jeu-mat" id="btn-rejouer-maitre" title="Rejouer">🔁</button>
+        <button type="button" class="bouton-jeu-mat" id="btn-lent-maitre" title="Plus lentement">🐢</button>
+      </div>
+      <div class="maitre-actions">
+        <button type="button" class="bouton-etape-nav" id="btn-resume-maitre">📖 Résumé</button>
+        <button type="button" class="bouton-etape-nav" id="btn-exercice-maitre">📝 Exercice</button>
+        <button type="button" class="bouton-etape-nav" id="btn-test-maitre">🏆 Test final</button>
+      </div>
+    `;
+    lancerLectureMaitre(data.reponse);
+    brancherControlesMaitre(sujet);
+  } catch (erreur) {
+    contenu.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
+  }
+}
+
+async function lancerLectureMaitre(texte) {
+  const avatarEl = document.getElementById("avatar-maitre");
+  if (selecteurLangue.value === "moore") return; // pas de voix disponible pour le mooré
+  try {
+    const res = await fetch("/api/parler", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ texte, langue: selecteurLangue.value }),
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    audioMaitre = new Audio(URL.createObjectURL(blob));
+    audioMaitre.onplay = () => avatarEl && avatarEl.classList.add("parle");
+    audioMaitre.onpause = () => avatarEl && avatarEl.classList.remove("parle");
+    audioMaitre.onended = () => avatarEl && avatarEl.classList.remove("parle");
+    audioMaitre.play();
+  } catch {
+    // lecture audio best-effort : le texte reste lisible même en cas d'échec
+  }
+}
+
+function brancherControlesMaitre(sujet) {
+  document.getElementById("btn-play-maitre").addEventListener("click", () => audioMaitre && audioMaitre.play());
+  document.getElementById("btn-pause-maitre").addEventListener("click", () => audioMaitre && audioMaitre.pause());
+  document.getElementById("btn-rejouer-maitre").addEventListener("click", () => {
+    if (!audioMaitre) return;
+    audioMaitre.currentTime = 0;
+    audioMaitre.play();
+  });
+  document.getElementById("btn-lent-maitre").addEventListener("click", (e) => {
+    if (!audioMaitre) return;
+    audioMaitre.playbackRate = audioMaitre.playbackRate < 1 ? 1 : 0.6;
+    e.currentTarget.style.opacity = audioMaitre.playbackRate < 1 ? "1" : "0.6";
+  });
+  document.getElementById("btn-resume-maitre").addEventListener("click", () => genererResumeMaitre(sujet));
+  document.getElementById("btn-exercice-maitre").addEventListener("click", () => {
+    if (audioMaitre) audioMaitre.pause();
+    rendreGrilleJeuxMaternelle(); // renvoie vers un vrai jeu pour s'exercer
+  });
+  document.getElementById("btn-test-maitre").addEventListener("click", () => lancerTestFinalMaitre(sujet));
+}
+
+async function genererResumeMaitre(sujet) {
+  const contenu = document.getElementById("tableau-maitre-contenu");
+  const zoneTexte = contenu.querySelector(".tableau-texte");
+  zoneTexte.innerHTML = texteTraduit("reflexion");
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: `Résume "${sujet}" en une seule phrase très simple pour un enfant de maternelle.`, historique: [], langue: selecteurLangue.value }),
+    });
+    const data = await res.json();
+    zoneTexte.innerHTML = echapperHtml(data.reponse);
+    lancerLectureMaitre(data.reponse);
+  } catch {
+    zoneTexte.textContent = "⚠️ Résumé indisponible.";
+  }
+}
+
+async function lancerTestFinalMaitre(sujet) {
+  const contenu = document.getElementById("tableau-maitre-contenu");
+  contenu.innerHTML = `<p class="chargement-guide">${texteTraduit("jeuxPreparation")}</p>`;
+  const prompt = `Génère exactement 3 questions à choix multiples très simples pour un enfant de maternelle sur le sujet "${sujet}". ` +
+    `Réponds UNIQUEMENT avec un tableau JSON valide : [{"question": "...", "choix": ["...","...","...","..."], "reponse": 0}]`;
+  try {
+    const questions = await demanderTableauJSON(prompt, selecteurLangue.value);
+    let index = 0, score = 0;
+    const afficherQ = () => {
+      const q = questions[index];
+      contenu.innerHTML = `
+        <div class="jeu-progression">${index + 1} / ${questions.length}</div>
+        <div class="jeu-question">${echapperHtml(q.question)}</div>
+        <div class="jeu-choix">${q.choix.map((c, i) => `<button type="button" class="bouton-choix" data-index="${i}">${echapperHtml(c)}</button>`).join("")}</div>
+      `;
+      contenu.querySelectorAll(".bouton-choix").forEach((bouton) => {
+        bouton.addEventListener("click", () => {
+          const choisi = Number(bouton.dataset.index);
+          contenu.querySelectorAll(".bouton-choix").forEach((b) => (b.disabled = true));
+          if (choisi === Number(q.reponse)) { bouton.classList.add("bonne-reponse"); score++; }
+          else {
+            bouton.classList.add("mauvaise-reponse");
+            contenu.querySelectorAll(".bouton-choix")[q.reponse].classList.add("bonne-reponse");
+          }
+          const suite = document.createElement("button");
+          suite.type = "button";
+          suite.className = "bouton-envoyer jeu-suivant";
+          suite.textContent = index + 1 < questions.length ? texteTraduit("jeuxSuivant") : texteTraduit("jeuxTermine");
+          suite.addEventListener("click", () => {
+            index++;
+            if (index < questions.length) afficherQ();
+            else {
+              contenu.innerHTML = `<p>🎉 ${texteTraduit("jeuxScoreTexte").replace("{score}", score).replace("{total}", questions.length)}</p>`;
+              enregistrerActivite("jeu", "Maternelle", `${professeurChoisi.nom} — ${sujet}`, score, questions.length);
+            }
+          });
+          contenu.appendChild(suite);
+        });
+      });
+    };
+    afficherQ();
+  } catch {
+    contenu.innerHTML = `<p>⚠️ ${texteTraduit("jeuxErreur")}</p>`;
+  }
 }
 
 // ============================================================

@@ -458,6 +458,74 @@ body {
 .jeu-mat-comptage { background: linear-gradient(160deg, #5b9bd5, #3f7db5); }
 .jeu-mat-association { background: linear-gradient(160deg, #e8b75c, #d9a04e); }
 .jeu-mat-reconnaissance { background: linear-gradient(160deg, #d97b8f, #c1596f); }
+.jeu-mat-coloriage { background: linear-gradient(160deg, #e8734f, #c85a38); }
+.jeu-mat-puzzle { background: linear-gradient(160deg, #4aa8a0, #367f79); }
+.jeu-mat-labyrinthe { background: linear-gradient(160deg, #6d8fd8, #4f6db8); }
+.jeu-mat-completer { background: linear-gradient(160deg, #c17be0, #9d5bc0); }
+.jeu-mat-chansons { background: linear-gradient(160deg, #e85c9c, #c43f80); }
+
+/* ---------- coloriage ---------- */
+.coloriage-palette { display: flex; justify-content: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.pastille-couleur {
+  all: unset;
+  cursor: pointer;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+}
+.pastille-couleur.couleur-active { border-color: var(--craie); transform: scale(1.15); }
+.coloriage-svg { width: 100%; max-width: 340px; height: auto; display: block; margin: 0 auto; }
+
+/* ---------- puzzle ---------- */
+.puzzle-modele {
+  font-size: 1.6rem;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+/* ---------- labyrinthe ---------- */
+.labyrinthe-grille {
+  display: grid;
+  gap: 0;
+  max-width: 320px;
+  margin: 0 auto 20px;
+  border-top: 3px solid var(--craie-douce);
+  border-left: 3px solid var(--craie-douce);
+}
+.labyrinthe-case {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  background: var(--surface);
+}
+.labyrinthe-case.mur-n { border-top: 3px solid var(--craie-douce); }
+.labyrinthe-case.mur-e { border-right: 3px solid var(--craie-douce); }
+.labyrinthe-case.mur-s { border-bottom: 3px solid var(--craie-douce); }
+.labyrinthe-case.mur-o { border-left: 3px solid var(--craie-douce); }
+.labyrinthe-controles {
+  display: grid;
+  grid-template-columns: repeat(3, 56px);
+  grid-template-rows: repeat(3, 56px);
+  gap: 4px;
+  justify-content: center;
+}
+
+/* ---------- comptines ---------- */
+.comptine-texte {
+  font-family: var(--police-affichage);
+  font-size: 1.2rem;
+  color: var(--craie);
+  line-height: 1.8;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 18px;
+}
 
 .zone-jeu-maternelle[hidden] { display: none; }
 .zone-jeu-maternelle {
@@ -551,6 +619,201 @@ body {
 .jeu-mat-colonne { display: flex; flex-direction: column; gap: 12px; }
 
 .jeu-mat-fin { font-size: 1.4rem; padding: 30px; }
+
+/* ---------- animations : donner vie aux jeux ---------- */
+@keyframes flotter {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes rebondir {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.25); }
+  60% { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+@keyframes secouer {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+@keyframes celebrer {
+  0% { transform: scale(0.6) rotate(-8deg); opacity: 0; }
+  50% { transform: scale(1.2) rotate(4deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes marcherSurPlace {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-2px) rotate(-6deg); }
+  75% { transform: translateY(-2px) rotate(6deg); }
+}
+@keyframes etincelle {
+  0% { transform: scale(0.3); opacity: 0; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jeu-mat-objets span, .labyrinthe-joueur, .jeu-mat-fin, .bouton-jeu-mat.jeu-mat-correct, .bouton-jeu-mat.jeu-mat-incorrect { animation: none !important; }
+}
+
+.jeu-mat-objets span { display: inline-block; animation: flotter 2.4s ease-in-out infinite; }
+.jeu-mat-objets span:nth-child(2n) { animation-delay: 0.3s; }
+.jeu-mat-objets span:nth-child(3n) { animation-delay: 0.6s; }
+
+.bouton-jeu-mat.jeu-mat-correct { animation: rebondir 0.5s ease; }
+.bouton-jeu-mat.jeu-mat-incorrect { animation: secouer 0.4s ease; }
+
+.jeu-mat-fin { animation: celebrer 0.5s ease; }
+
+/* carte mémoire : vrai effet de retournement 3D */
+.grille-memoire { perspective: 600px; }
+.carte-memoire {
+  transition: transform 0.4s ease, background 0.3s ease;
+  transform-style: preserve-3d;
+}
+.carte-memoire.retournee, .carte-memoire.trouvee { transform: rotateY(180deg); }
+.carte-memoire.retournee span, .carte-memoire.trouvee span { display: inline-block; transform: rotateY(180deg); }
+
+/* labyrinthe : personnage qui glisse réellement d'une case à l'autre */
+.labyrinthe-conteneur { position: relative; max-width: 320px; margin: 0 auto 20px; }
+.labyrinthe-joueur {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  transition: left 0.25s ease, top 0.25s ease;
+  animation: marcherSurPlace 0.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* coloriage : petite étincelle quand une zone est coloriée */
+.etincelle-coloriage {
+  position: fixed;
+  font-size: 1.4rem;
+  pointer-events: none;
+  animation: etincelle 0.6s ease forwards;
+  z-index: 200;
+}
+
+/* ---------- Mon Maître ---------- */
+.jeu-mat-maitre { background: linear-gradient(160deg, #7d5fbf, #5c3fa0); }
+
+.carte-professeur {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--surface-haute);
+  border: 2px solid;
+  font-size: 0.85rem;
+  color: var(--craie-douce);
+  transition: transform 0.15s ease;
+}
+.carte-professeur:hover { transform: translateY(-3px); }
+
+.salle-classe {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  text-align: left;
+}
+.avatar-maitre-zone {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 140px;
+}
+.avatar-maitre {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.2rem;
+  position: relative;
+}
+.avatar-maitre-visage { display: inline-block; animation: clignerYeux 4.2s ease-in-out infinite; }
+.avatar-maitre.parle .avatar-maitre-visage { animation: parlerMaitre 0.35s ease-in-out infinite alternate; }
+.avatar-maitre-nom { font-size: 0.85rem; color: var(--craie-douce); font-weight: 600; text-align: center; }
+
+.baton-maitre {
+  position: absolute;
+  bottom: 6px;
+  right: -4px;
+  font-size: 1.5rem;
+  transform-origin: bottom left;
+  transform: rotate(15deg);
+  transition: transform 0.2s ease;
+}
+.avatar-maitre.parle .baton-maitre {
+  animation: agiterBaton 0.45s ease-in-out infinite alternate;
+}
+
+@keyframes clignerYeux {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.15); }
+}
+@keyframes parlerMaitre {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.08) translateY(-2px); }
+}
+@keyframes agiterBaton {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(40deg); }
+}
+
+.tableau-maitre { flex: 1; min-width: 0; text-align: left; }
+.tableau-maitre .etude-champ { margin-bottom: 12px; }
+.tableau-maitre .etude-champ input {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--surface-haute);
+  border: 1px solid rgba(242,239,226,0.1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--craie);
+  font-family: var(--police-corps);
+}
+.tableau-texte {
+  background: linear-gradient(160deg, #1e4632, #163526);
+  border: 10px solid #8b5a2b;
+  border-radius: 8px;
+  box-shadow: inset 0 0 30px rgba(0,0,0,0.35), 0 8px 20px rgba(0,0,0,0.3);
+  padding: 22px 24px;
+  margin: 16px 0;
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #f5f0e0;
+  font-family: var(--police-affichage);
+  text-shadow: 0 0 6px rgba(245,240,224,0.25);
+  position: relative;
+}
+.tableau-texte::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(245,240,224,0.08);
+  border-radius: 4px;
+  pointer-events: none;
+}
+.maitre-controles { display: flex; gap: 8px; margin-bottom: 14px; }
+.maitre-controles .bouton-jeu-mat { min-width: 44px; padding: 10px 14px; font-size: 1.2rem; }
+.maitre-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+@media (max-width: 600px) {
+  .salle-classe { flex-direction: column; align-items: center; }
+  .tableau-maitre { width: 100%; }
+}
 
 @media (max-width: 480px) {
   .grille-memoire { grid-template-columns: repeat(3, 1fr); max-width: 300px; }
