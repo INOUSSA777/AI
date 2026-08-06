@@ -141,6 +141,17 @@
       </div>
 
       <!-- Étape 2 : choisir une technique d'apprentissage -->
+      <!-- Étape 1.5 : choisir sa classe précise (sauf Maternelle) -->
+      <div class="etude-etape-classe" id="etude-etape-classe" hidden>
+        <div class="etude-classe-nav-boutons">
+          <button type="button" class="bouton-etape-nav" id="btn-retour-classe-niveau">← Changer de niveau</button>
+          <button type="button" class="bouton-etape-nav" id="btn-retour-classe-etape" hidden>← Retour</button>
+        </div>
+        <h2 id="etude-classe-niveau-titre"></h2>
+        <p class="guide-desc" id="etude-classe-sous-titre"></p>
+        <div class="grille-classe" id="grille-classe-dynamique"></div>
+      </div>
+
       <div class="etude-etape-technique" id="etude-etape-technique" hidden>
         <button type="button" class="bouton-etape-nav" id="btn-retour-niveau-etude">← Changer de niveau</button>
         <h2 id="etude-niveau-choisi-titre"></h2>
@@ -157,6 +168,106 @@
             <input type="text" id="etude-sujet-v2" placeholder="Ex : les fractions, la dérivation…">
           </div>
           <button type="button" class="bouton-envoyer bouton-guide" id="btn-commencer-technique">Commencer</button>
+        </div>
+
+        <div class="ressources-manuelles">
+          <h3 class="biblio-section-titre">📂 Vidéos et exercices ajoutés pour cette classe</h3>
+          <div class="etude-champ">
+            <label>Matière</label>
+            <input type="text" id="ressource-matiere" placeholder="Ex : Mathématiques">
+          </div>
+
+          <div class="ressources-onglets">
+            <button type="button" class="onglet-ressource actif" data-onglet="videos">🎥 Vidéos</button>
+            <button type="button" class="onglet-ressource" data-onglet="exercices">📝 Exercices</button>
+            <button type="button" class="onglet-ressource" data-onglet="fiches">📇 Fiches</button>
+            <button type="button" class="onglet-ressource" data-onglet="maitrise">📊 Maîtrise</button>
+            <button type="button" class="onglet-ressource" data-onglet="epreuve">⏱️ Épreuve</button>
+            <button type="button" class="onglet-ressource" data-onglet="planning">📅 Planning</button>
+          </div>
+
+          <div id="panneau-videos">
+            <div id="liste-videos" class="liste-ressources"></div>
+            <button type="button" class="bouton-etape-nav" id="btn-ouvrir-form-video">➕ Ajouter une vidéo</button>
+            <div class="formulaire-ressource" id="formulaire-video" hidden>
+              <input type="text" id="video-titre" placeholder="Titre de la vidéo">
+              <div class="choix-type-ressource">
+                <label><input type="radio" name="type-video" value="lien" checked> Lien (YouTube, Vimeo…)</label>
+                <label><input type="radio" name="type-video" value="fichier"> Fichier vidéo</label>
+              </div>
+              <input type="text" id="video-url" placeholder="https://…">
+              <input type="file" id="video-fichier" accept="video/*" hidden>
+              <button type="button" class="bouton-envoyer" id="btn-valider-video">Ajouter la vidéo</button>
+              <p class="statut-envoi-lot" id="statut-video"></p>
+            </div>
+          </div>
+
+          <div id="panneau-exercices" hidden>
+            <div id="liste-exercices" class="liste-ressources"></div>
+            <button type="button" class="bouton-etape-nav" id="btn-ouvrir-form-exercice">➕ Ajouter un exercice</button>
+            <div class="formulaire-ressource" id="formulaire-exercice" hidden>
+              <input type="text" id="exercice-question" placeholder="Énoncé de la question">
+              <input type="text" id="exercice-choix-0" placeholder="Choix 1 (coche s'il est correct) →">
+              <label class="case-bonne-reponse"><input type="radio" name="bonne-reponse" value="0" checked> bonne réponse</label>
+              <input type="text" id="exercice-choix-1" placeholder="Choix 2 →">
+              <label class="case-bonne-reponse"><input type="radio" name="bonne-reponse" value="1"> bonne réponse</label>
+              <input type="text" id="exercice-choix-2" placeholder="Choix 3 →">
+              <label class="case-bonne-reponse"><input type="radio" name="bonne-reponse" value="2"> bonne réponse</label>
+              <input type="text" id="exercice-choix-3" placeholder="Choix 4 →">
+              <label class="case-bonne-reponse"><input type="radio" name="bonne-reponse" value="3"> bonne réponse</label>
+              <input type="text" id="exercice-explication" placeholder="Explication (optionnel)">
+              <button type="button" class="bouton-envoyer" id="btn-valider-exercice">Ajouter l'exercice</button>
+              <p class="statut-envoi-lot" id="statut-exercice"></p>
+            </div>
+          </div>
+
+          <!-- Fiches de révision (répétition espacée) -->
+          <div id="panneau-fiches" hidden>
+            <p class="guide-desc">Fiches à réviser aujourd'hui pour cette matière.</p>
+            <div id="liste-fiches" class="liste-ressources"></div>
+            <div class="etude-champ" style="max-width:320px;">
+              <label>Sujet précis pour générer des fiches</label>
+              <input type="text" id="fiches-sujet" placeholder="Ex : la conjugaison du passé simple">
+            </div>
+            <button type="button" class="bouton-envoyer" id="btn-generer-fiches">🤖 Générer des fiches sur ce sujet</button>
+            <p class="statut-envoi-lot" id="statut-fiches"></p>
+          </div>
+
+          <!-- Suivi de maîtrise par chapitre -->
+          <div id="panneau-maitrise" hidden>
+            <p class="guide-desc">Basé sur tes vrais résultats aux quiz et exercices — un sujet jamais testé apparaît "non testé", pas noté au hasard.</p>
+            <div id="liste-maitrise" class="liste-ressources"></div>
+          </div>
+
+          <!-- Épreuve blanche chronométrée -->
+          <div id="panneau-epreuve" hidden>
+            <div id="epreuve-config">
+              <div class="etude-champ" style="max-width:320px;">
+                <label>Durée de l'épreuve</label>
+                <select id="epreuve-duree">
+                  <option value="5">5 minutes</option>
+                  <option value="10" selected>10 minutes</option>
+                  <option value="20">20 minutes</option>
+                </select>
+              </div>
+              <button type="button" class="bouton-envoyer bouton-guide" id="btn-lancer-epreuve">▶ Lancer l'épreuve blanche</button>
+            </div>
+            <div id="epreuve-zone" hidden></div>
+          </div>
+
+          <!-- Planning de révision -->
+          <div id="panneau-planning" hidden>
+            <div class="etude-champ" style="max-width:320px;">
+              <label>Date du contrôle</label>
+              <input type="date" id="planning-date">
+            </div>
+            <div class="etude-champ" style="max-width:320px;">
+              <label>Chapitres concernés (séparés par des virgules)</label>
+              <input type="text" id="planning-chapitres" placeholder="Ex : fractions, aires, périmètres">
+            </div>
+            <button type="button" class="bouton-envoyer" id="btn-generer-planning">🤖 Générer mon planning</button>
+            <div id="planning-resultat"></div>
+          </div>
         </div>
       </div>
 

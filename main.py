@@ -23,6 +23,8 @@ from services import chat_ai
 from services import auth as auth_service
 from services import bibliotheque as bibliotheque_service
 from services import profil as profil_service
+from services import ressources as ressources_service
+from services import revision as revision_service
 
 app = FastAPI(title="INOUS.AI")
 
@@ -66,6 +68,33 @@ class ActiviteAEnregistrer(BaseModel):
     sujet: str | None = None
     score: int | None = None
     total: int | None = None
+    classe: str | None = None
+
+
+class GenererFiches(BaseModel):
+    matiere: str
+    classe: str
+    sujet: str
+
+
+class ReponseFiche(BaseModel):
+    correct: bool
+
+
+class VideoLien(BaseModel):
+    matiere: str
+    classe: str
+    titre: str
+    url: str
+
+
+class ExerciceAAjouter(BaseModel):
+    matiere: str
+    classe: str
+    question: str
+    choix: list[str]
+    reponse_index: int
+    explication: str = ""
 
 
 class DemandeReinitialisation(BaseModel):
@@ -268,8 +297,57 @@ def enregistrer_activite_profil(donnees: ActiviteAEnregistrer, authorization: st
         raise HTTPException(status_code=401, detail="Non connecté.")
     try:
         return profil_service.enregistrer_activite(
-            utilisateur.id, donnees.type_activite, donnees.matiere, donnees.sujet, donnees.score, donnees.total
+            utilisateur.id, donnees.type_activite, donnees.matiere, donnees.sujet,
+            donnees.score, donnees.total, donnees.classe,
         )
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.get("/api/profil/maitrise")
+def maitrise_route(classe: str = "", authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Non connecté.")
+    try:
+        return profil_service.obtenir_maitrise(utilisateur.id, classe or None)
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.post("/api/fiches/generer")
+def generer_fiches_route(donnees: GenererFiches, authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Connecte-toi pour générer des fiches.")
+    try:
+        return revision_service.generer_fiches(utilisateur.id, donnees.matiere, donnees.classe, donnees.sujet)
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.get("/api/fiches/a-reviser")
+def fiches_a_reviser_route(matiere: str = "", classe: str = "", authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Connecte-toi pour voir tes fiches.")
+    try:
+        return revision_service.fiches_a_reviser(utilisateur.id, matiere or None, classe or None)
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.post("/api/fiches/{id_fiche}/repondre")
+def repondre_fiche_route(id_fiche: str, donnees: ReponseFiche, authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Connecte-toi.")
+    try:
+        return revision_service.repondre_fiche(utilisateur.id, id_fiche, donnees.correct)
     except Exception as erreur:
         raise HTTPException(status_code=500, detail=str(erreur))
 
@@ -285,6 +363,71 @@ def historique_profil(authorization: str = ""):
             "historique": profil_service.obtenir_historique(utilisateur.id),
             "stats": profil_service.obtenir_stats(utilisateur.id),
         }
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.post("/api/videos/lien")
+def ajouter_video_lien_route(donnees: VideoLien, authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Connecte-toi pour ajouter une vidéo.")
+    try:
+        return ressources_service.ajouter_video_lien(utilisateur.id, donnees.matiere, donnees.classe, donnees.titre, donnees.url)
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.post("/api/videos/fichier")
+async def ajouter_video_fichier_route(
+    fichier: UploadFile = File(...),
+    matiere: str = Form(...),
+    classe: str = Form(...),
+    titre: str = Form(...),
+    authorization: str = "",
+):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Connecte-toi pour ajouter une vidéo.")
+    try:
+        contenu = await fichier.read()
+        return ressources_service.ajouter_video_fichier(
+            utilisateur.id, matiere, classe, titre, fichier.filename, contenu,
+            fichier.content_type or "video/mp4",
+        )
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.get("/api/videos")
+def lister_videos_route(matiere: str = "", classe: str = ""):
+    try:
+        return ressources_service.lister_videos(matiere or None, classe or None)
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.post("/api/exercices")
+def ajouter_exercice_route(donnees: ExerciceAAjouter, authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Connecte-toi pour ajouter un exercice.")
+    try:
+        return ressources_service.ajouter_exercice(
+            utilisateur.id, donnees.matiere, donnees.classe, donnees.question,
+            donnees.choix, donnees.reponse_index, donnees.explication,
+        )
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.get("/api/exercices")
+def lister_exercices_route(matiere: str = "", classe: str = ""):
+    try:
+        return ressources_service.lister_exercices(matiere or None, classe or None)
     except Exception as erreur:
         raise HTTPException(status_code=500, detail=str(erreur))
 

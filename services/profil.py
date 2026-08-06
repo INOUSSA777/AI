@@ -25,6 +25,7 @@ def enregistrer_activite(
     sujet: str | None = None,
     score: int | None = None,
     total: int | None = None,
+    classe: str | None = None,
 ) -> dict:
     client = auth_service.obtenir_client()
 
@@ -35,6 +36,7 @@ def enregistrer_activite(
         "sujet": sujet,
         "score": score,
         "total": total,
+        "classe": classe,
     }).execute()
 
     # met à jour les points et la série de jours actifs sur le profil
@@ -95,3 +97,42 @@ def obtenir_stats(id_utilisateur: str) -> dict:
         matieres[nom] = matieres.get(nom, 0) + 1
 
     return {"seances": seances, "score_moyen": score_moyen, "matieres": matieres}
+
+
+def obtenir_maitrise(id_utilisateur: str, classe: str | None) -> list[dict]:
+    """
+    Regroupe l'historique réel par (matière, sujet) et calcule un niveau de
+    maîtrise à partir des vrais scores obtenus — jamais de chiffre inventé.
+    Sans quiz sur un sujet, il est classé "non_teste" plutôt que noté au hasard.
+    """
+    client = auth_service.obtenir_client()
+    requete = client.table("historique_apprentissage").select("*").eq("user_id", id_utilisateur)
+    if classe:
+        requete = requete.eq("classe", classe)
+    historique = requete.execute().data
+
+    groupes: dict[tuple, dict] = {}
+    for h in historique:
+        cle = (h.get("matiere") or "Autre", h.get("sujet") or "Général")
+        groupe = groupes.setdefault(cle, {"scores": [], "vues": 0})
+        groupe["vues"] += 1
+        if h.get("total"):
+            groupe["scores"].append(h["score"] / h["total"])
+
+    resultat = []
+    for (matiere, sujet), data in groupes.items():
+        if data["scores"]:
+            moyenne = sum(data["scores"]) / len(data["scores"])
+            if moyenne >= 0.8:
+                niveau = "maitrise"
+            elif moyenne >= 0.5:
+                niveau = "en_cours"
+            else:
+                niveau = "a_retravailler"
+        else:
+            moyenne, niveau = None, "non_teste"
+        resultat.append({
+            "matiere": matiere, "sujet": sujet, "moyenne": moyenne,
+            "niveau": niveau, "vues": data["vues"],
+        })
+    return sorted(resultat, key=lambda r: (r["moyenne"] is None, r["moyenne"] or 0))

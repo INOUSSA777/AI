@@ -14,6 +14,7 @@ const selecteurStatut = document.getElementById("selecteur-statut");
 const boutonsModes = document.querySelectorAll(".mode-btn");
 const etudeEtapeNiveau = document.getElementById("etude-etape-niveau");
 const etudeEtapeTechnique = document.getElementById("etude-etape-technique");
+const etudeEtapeClasse = document.getElementById("etude-etape-classe");
 const grilleNiveauxEtude = document.getElementById("grille-niveaux-etude");
 const grilleTechniques = document.getElementById("grille-techniques");
 const etudeNiveauChoisiTitre = document.getElementById("etude-niveau-choisi-titre");
@@ -578,6 +579,112 @@ const etudeEtapeMaternelle = document.getElementById("etude-etape-maternelle");
 const grilleJeuxMaternelle = document.getElementById("grille-jeux-maternelle");
 const zoneJeuMaternelle = document.getElementById("zone-jeu-maternelle");
 
+// ---------- classes précises par niveau (système éducatif burkinabè) ----------
+const CLASSES_PAR_NIVEAU = {
+  "Primaire": { type: "flat", options: ["CP1", "CP2", "CE1", "CE2", "CM1", "CM2"] },
+  "Collège": { type: "flat", options: ["6e", "5e", "4e", "3e"] },
+  "Lycée": {
+    type: "grade-serie",
+    grades: {
+      "Seconde": ["A", "C", "D", "E", "F", "G"],
+      "Première": ["A", "C", "D", "E", "F", "G", "H"],
+      "Terminale": ["A", "C", "D", "E", "F", "G", "H"],
+    },
+  },
+  "Formation professionnelle": { type: "flat", options: ["1ère année", "2e année", "3e année", "Perfectionnement"] },
+  "Université": {
+    type: "univ",
+    niveaux: ["L1", "L2", "L3", "M1", "M2", "D1", "D2", "D3+"],
+    domaines: {
+      "Sciences et Technologies": ["Mathématiques", "Informatique", "Statistique", "Intelligence Artificielle", "Data Science", "Physique", "Chimie", "Biologie", "Géologie"],
+      "Économie et Gestion": ["Économie", "Gestion", "Comptabilité", "Finance", "Banque", "Assurance", "Marketing", "Commerce International", "Entrepreneuriat"],
+      "Droit et Sciences Politiques": ["Droit Public", "Droit Privé", "Droit des Affaires", "Sciences Politiques", "Administration Publique"],
+      "Lettres et Sciences Humaines": ["Histoire", "Géographie", "Philosophie", "Sociologie", "Psychologie", "Anthropologie", "Linguistique"],
+      "Éducation": ["Sciences de l'Éducation", "Formation des Enseignants", "Inspection Pédagogique"],
+      "Santé": ["Médecine", "Pharmacie", "Odontologie", "Sage-femme", "Infirmier", "Santé Publique", "Nutrition", "Kinésithérapie"],
+      "Agriculture": ["Agronomie", "Productions végétales", "Productions animales", "Foresterie", "Environnement", "Hydraulique", "Agroalimentaire"],
+      "Ingénierie": ["Génie Civil", "Génie Électrique", "Génie Mécanique", "Génie Industriel", "Génie Informatique", "Télécommunications"],
+      "Communication": ["Journalisme", "Communication", "Audiovisuel", "Multimédia"],
+      "Arts": ["Musique", "Théâtre", "Arts Plastiques", "Design", "Architecture"],
+    },
+  },
+};
+
+let classeChoisie = null;
+let pileClasseNavigation = [];
+
+function afficherEtapeClasse(rendreFn) {
+  pileClasseNavigation.push(rendreFn);
+  document.getElementById("btn-retour-classe-etape").hidden = pileClasseNavigation.length <= 1;
+  rendreFn();
+}
+
+function retourEtapeClasse() {
+  pileClasseNavigation.pop();
+  if (pileClasseNavigation.length === 0) {
+    etudeEtapeClasse.hidden = true;
+    etudeEtapeNiveau.hidden = false;
+    return;
+  }
+  document.getElementById("btn-retour-classe-etape").hidden = pileClasseNavigation.length <= 1;
+  pileClasseNavigation[pileClasseNavigation.length - 1]();
+}
+
+function rendreClasseFlat(options, onChoix, sousTitre) {
+  document.getElementById("etude-classe-sous-titre").textContent = sousTitre || "";
+  const grille = document.getElementById("grille-classe-dynamique");
+  grille.innerHTML = options.map((o) => `<button type="button" class="carte-classe" data-val="${o}">${o}</button>`).join("");
+  grille.querySelectorAll(".carte-classe").forEach((bouton) => {
+    bouton.addEventListener("click", () => onChoix(bouton.dataset.val));
+  });
+}
+
+function demarrerSelectionClasse(niveau) {
+  pileClasseNavigation = [];
+  document.getElementById("etude-classe-niveau-titre").textContent = niveau;
+  const config = CLASSES_PAR_NIVEAU[niveau];
+  const etapeFinale = (label) => validerClasseEtPasserTechnique(label);
+
+  if (!config || config.type === "flat") {
+    afficherEtapeClasse(() => rendreClasseFlat(config.options, etapeFinale, "Choisis ta classe"));
+  } else if (config.type === "grade-serie") {
+    afficherEtapeClasse(() => rendreClasseFlat(Object.keys(config.grades), (grade) => {
+      afficherEtapeClasse(() => rendreClasseFlat(
+        config.grades[grade].map((s) => `${grade} ${s}`),
+        etapeFinale,
+        `Choisis ta série (${grade})`
+      ));
+    }, "Choisis ta classe"));
+  } else if (config.type === "univ") {
+    afficherEtapeClasse(() => rendreClasseFlat(config.niveaux, (annee) => {
+      afficherEtapeClasse(() => rendreClasseFlat(Object.keys(config.domaines), (domaine) => {
+        afficherEtapeClasse(() => rendreClasseFlat(
+          config.domaines[domaine],
+          (filiere) => etapeFinale(`${annee} — ${filiere}`),
+          `Choisis ta filière (${domaine})`
+        ));
+      }, "Choisis ton domaine"));
+    }, "Choisis ton année"));
+  }
+}
+
+function validerClasseEtPasserTechnique(classe) {
+  classeChoisie = classe;
+  etudeEtapeClasse.hidden = true;
+  etudeEtapeTechnique.hidden = false;
+  etudeNiveauChoisiTitre.textContent = `${etudeNiveauChoisi} — ${classe}`;
+  etudeSujetFormulaire.hidden = true;
+  etudeTechniqueChoisie = null;
+  rendreGrilleTechniques();
+}
+
+document.getElementById("btn-retour-classe-niveau").addEventListener("click", () => {
+  pileClasseNavigation = [];
+  etudeEtapeClasse.hidden = true;
+  etudeEtapeNiveau.hidden = false;
+});
+document.getElementById("btn-retour-classe-etape").addEventListener("click", retourEtapeClasse);
+
 function choisirNiveauEtude(niveau) {
   etudeNiveauChoisi = niveau;
   etudeNiveauChoisiTitre.textContent = niveau;
@@ -589,10 +696,9 @@ function choisirNiveauEtude(niveau) {
     return;
   }
 
-  etudeEtapeTechnique.hidden = false;
-  etudeSujetFormulaire.hidden = true;
-  etudeTechniqueChoisie = null;
-  rendreGrilleTechniques();
+  classeChoisie = null;
+  etudeEtapeClasse.hidden = false;
+  demarrerSelectionClasse(niveau);
 }
 
 document.getElementById("btn-retour-niveau-etude").addEventListener("click", () => {
@@ -629,6 +735,346 @@ function rendreGrilleTechniques() {
   });
 }
 
+// ---------- ressources manuelles : vidéos et exercices ajoutés par un utilisateur ----------
+const ressourceMatiere = document.getElementById("ressource-matiere");
+let ongletRessourceActif = "videos";
+
+function classeEtMatiereRessource() {
+  return { classe: classeChoisie || etudeNiveauChoisi || "", matiere: ressourceMatiere.value.trim() };
+}
+
+async function chargerVideos() {
+  const { classe, matiere } = classeEtMatiereRessource();
+  const liste = document.getElementById("liste-videos");
+  if (!matiere) { liste.innerHTML = `<p class="chargement-guide">Indique une matière pour voir/ajouter des vidéos.</p>`; return; }
+  liste.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+  try {
+    const res = await fetch(`/api/videos?matiere=${encodeURIComponent(matiere)}&classe=${encodeURIComponent(classe)}`);
+    const videos = await res.json();
+    liste.innerHTML = videos.length
+      ? videos.map((v) => `
+          <div class="carte-ressource">
+            <div><div class="carte-ressource-titre">🎥 ${echapperHtml(v.titre)}</div><div class="carte-ressource-meta">${v.type === "lien" ? "Lien externe" : "Fichier uploadé"}</div></div>
+            <a href="${echapperHtml(v.url)}" target="_blank" rel="noopener">Voir ▶</a>
+          </div>`).join("")
+      : `<p class="chargement-guide">Aucune vidéo pour l'instant.</p>`;
+  } catch {
+    liste.innerHTML = `<p class="chargement-guide">Aucune vidéo pour l'instant.</p>`;
+  }
+}
+
+async function chargerExercicesPersonnalises() {
+  const { classe, matiere } = classeEtMatiereRessource();
+  const liste = document.getElementById("liste-exercices");
+  if (!matiere) { liste.innerHTML = `<p class="chargement-guide">Indique une matière pour voir/ajouter des exercices.</p>`; return; }
+  liste.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+  try {
+    const res = await fetch(`/api/exercices?matiere=${encodeURIComponent(matiere)}&classe=${encodeURIComponent(classe)}`);
+    const exercices = await res.json();
+    liste.innerHTML = exercices.length
+      ? exercices.map((e) => `<div class="carte-ressource"><div class="carte-ressource-titre">📝 ${echapperHtml(e.question)}</div></div>`).join("")
+      : `<p class="chargement-guide">Aucun exercice pour l'instant.</p>`;
+  } catch {
+    liste.innerHTML = `<p class="chargement-guide">Aucun exercice pour l'instant.</p>`;
+  }
+}
+
+ressourceMatiere.addEventListener("change", () => { chargerVideos(); chargerExercicesPersonnalises(); });
+
+document.querySelectorAll(".onglet-ressource").forEach((onglet) => {
+  onglet.addEventListener("click", () => {
+    document.querySelectorAll(".onglet-ressource").forEach((o) => o.classList.remove("actif"));
+    onglet.classList.add("actif");
+    ongletRessourceActif = onglet.dataset.onglet;
+    ["videos", "exercices", "fiches", "maitrise", "epreuve", "planning"].forEach((id) => {
+      document.getElementById(`panneau-${id}`).hidden = ongletRessourceActif !== id;
+    });
+    if (ongletRessourceActif === "fiches") chargerFichesAReviser();
+    if (ongletRessourceActif === "maitrise") chargerMaitrise();
+  });
+});
+
+document.getElementById("btn-ouvrir-form-video").addEventListener("click", () => {
+  document.getElementById("formulaire-video").hidden = false;
+});
+document.querySelectorAll('input[name="type-video"]').forEach((radio) => {
+  radio.addEventListener("change", () => {
+    const estFichier = document.querySelector('input[name="type-video"]:checked').value === "fichier";
+    document.getElementById("video-url").hidden = estFichier;
+    document.getElementById("video-fichier").hidden = !estFichier;
+  });
+});
+
+document.getElementById("btn-valider-video").addEventListener("click", async () => {
+  const { classe, matiere } = classeEtMatiereRessource();
+  const titre = document.getElementById("video-titre").value.trim();
+  const estFichier = document.querySelector('input[name="type-video"]:checked').value === "fichier";
+  const statut = document.getElementById("statut-video");
+
+  if (!matiere || !titre) { alert("Indique la matière et un titre pour la vidéo."); return; }
+  statut.textContent = "Envoi en cours…";
+
+  try {
+    let res;
+    if (estFichier) {
+      const fichier = document.getElementById("video-fichier").files[0];
+      if (!fichier) { alert("Choisis un fichier vidéo."); statut.textContent = ""; return; }
+      const formData = new FormData();
+      formData.append("fichier", fichier);
+      formData.append("matiere", matiere);
+      formData.append("classe", classe);
+      formData.append("titre", titre);
+      res = await fetchAuthentifie("/api/videos/fichier", { method: "POST", body: formData });
+    } else {
+      const url = document.getElementById("video-url").value.trim();
+      if (!url) { alert("Colle un lien vers la vidéo."); statut.textContent = ""; return; }
+      res = await fetchAuthentifie("/api/videos/lien", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matiere, classe, titre, url }),
+      });
+    }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+    statut.textContent = "✅ Vidéo ajoutée !";
+    document.getElementById("video-titre").value = "";
+    document.getElementById("video-url").value = "";
+    chargerVideos();
+  } catch (erreur) {
+    statut.textContent = "⚠️ " + erreur.message;
+  }
+});
+
+document.getElementById("btn-ouvrir-form-exercice").addEventListener("click", () => {
+  document.getElementById("formulaire-exercice").hidden = false;
+});
+
+document.getElementById("btn-valider-exercice").addEventListener("click", async () => {
+  const { classe, matiere } = classeEtMatiereRessource();
+  const question = document.getElementById("exercice-question").value.trim();
+  const choix = [0, 1, 2, 3].map((i) => document.getElementById(`exercice-choix-${i}`).value.trim());
+  const reponseIndex = Number(document.querySelector('input[name="bonne-reponse"]:checked').value);
+  const explication = document.getElementById("exercice-explication").value.trim();
+  const statut = document.getElementById("statut-exercice");
+
+  if (!matiere || !question || choix.some((c) => !c)) { alert("Remplis la matière, la question et les 4 choix."); return; }
+  statut.textContent = "Envoi en cours…";
+
+  try {
+    const res = await fetchAuthentifie("/api/exercices", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matiere, classe, question, choix, reponse_index: reponseIndex, explication }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+    statut.textContent = "✅ Exercice ajouté !";
+    document.getElementById("exercice-question").value = "";
+    choix.forEach((_, i) => (document.getElementById(`exercice-choix-${i}`).value = ""));
+    document.getElementById("exercice-explication").value = "";
+    chargerExercicesPersonnalises();
+  } catch (erreur) {
+    statut.textContent = "⚠️ " + erreur.message;
+  }
+});
+
+// ---------- Fiches de révision (répétition espacée) ----------
+async function chargerFichesAReviser() {
+  const { classe, matiere } = classeEtMatiereRessource();
+  const liste = document.getElementById("liste-fiches");
+  if (!matiere) { liste.innerHTML = `<p class="chargement-guide">Indique une matière pour voir tes fiches.</p>`; return; }
+  liste.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+  try {
+    const res = await fetchAuthentifie(`/api/fiches/a-reviser?matiere=${encodeURIComponent(matiere)}&classe=${encodeURIComponent(classe)}`);
+    const fiches = await res.json();
+    if (!fiches.length) { liste.innerHTML = `<p class="chargement-guide">Aucune fiche à réviser pour l'instant — génères-en de nouvelles ci-dessous !</p>`; return; }
+    afficherFiche(fiches, 0, liste);
+  } catch {
+    liste.innerHTML = `<p class="chargement-guide">Connecte-toi pour voir tes fiches.</p>`;
+  }
+}
+
+function afficherFiche(fiches, index, conteneur) {
+  if (index >= fiches.length) {
+    conteneur.innerHTML = `<p class="chargement-guide">🎉 Toutes tes fiches du jour sont faites !</p>`;
+    return;
+  }
+  const f = fiches[index];
+  conteneur.innerHTML = `
+    <div class="jeu-mat-score">${index + 1} / ${fiches.length}</div>
+    <div class="fiche-flip" id="fiche-flip-actuelle">
+      <div class="fiche-flip-interieur">
+        <div class="fiche-face fiche-recto">${echapperHtml(f.recto)}</div>
+        <div class="fiche-face fiche-verso">${echapperHtml(f.verso)}</div>
+      </div>
+    </div>
+    <p class="guide-desc" style="text-align:center;">Touche la carte pour voir la réponse</p>
+    <div class="fiche-boutons-reponse" id="fiche-boutons" hidden>
+      <button type="button" class="bouton-envoyer" id="btn-fiche-non" style="background:var(--erreur);">😕 Je ne savais pas</button>
+      <button type="button" class="bouton-envoyer" id="btn-fiche-oui">😊 Je savais</button>
+    </div>
+  `;
+  const carte = document.getElementById("fiche-flip-actuelle");
+  carte.addEventListener("click", () => {
+    carte.classList.add("retournee");
+    document.getElementById("fiche-boutons").hidden = false;
+  });
+  const repondre = async (correct) => {
+    try { await fetchAuthentifie(`/api/fiches/${f.id}/repondre`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ correct }),
+    }); } catch { /* best-effort */ }
+    afficherFiche(fiches, index + 1, conteneur);
+  };
+  document.getElementById("btn-fiche-oui").addEventListener("click", () => repondre(true));
+  document.getElementById("btn-fiche-non").addEventListener("click", () => repondre(false));
+}
+
+document.getElementById("btn-generer-fiches").addEventListener("click", async () => {
+  const { classe, matiere } = classeEtMatiereRessource();
+  const sujet = document.getElementById("fiches-sujet").value.trim();
+  const statut = document.getElementById("statut-fiches");
+  if (!matiere || !sujet) { alert("Indique la matière et un sujet précis."); return; }
+  statut.textContent = texteTraduit("reflexion");
+  try {
+    const res = await fetchAuthentifie("/api/fiches/generer", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matiere, classe, sujet }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+    statut.textContent = `✅ ${data.length} fiches créées !`;
+    document.getElementById("fiches-sujet").value = "";
+    chargerFichesAReviser();
+  } catch (erreur) {
+    statut.textContent = "⚠️ " + erreur.message;
+  }
+});
+
+// ---------- Suivi de maîtrise par chapitre ----------
+const LIBELLES_MAITRISE = { maitrise: "✅ Maîtrisé", en_cours: "🟡 En cours", a_retravailler: "🔴 À retravailler", non_teste: "⚪ Non testé" };
+
+async function chargerMaitrise() {
+  const liste = document.getElementById("liste-maitrise");
+  liste.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+  try {
+    const res = await fetchAuthentifie(`/api/profil/maitrise?classe=${encodeURIComponent(classeChoisie || etudeNiveauChoisi || "")}`);
+    const donnees = await res.json();
+    liste.innerHTML = donnees.length
+      ? donnees.map((d) => `
+          <div class="ligne-maitrise">
+            <div><strong>${echapperHtml(d.matiere)}</strong> — ${echapperHtml(d.sujet)}${d.moyenne !== null ? ` (${Math.round(d.moyenne * 100)}%)` : ""}</div>
+            <span class="badge-maitrise ${d.niveau}">${LIBELLES_MAITRISE[d.niveau]}</span>
+          </div>`).join("")
+      : `<p class="chargement-guide">Pas encore assez d'activité pour cette classe — fais quelques cours et quiz d'abord !</p>`;
+  } catch {
+    liste.innerHTML = `<p class="chargement-guide">Connecte-toi pour voir ta maîtrise.</p>`;
+  }
+}
+
+// ---------- Épreuve blanche chronométrée ----------
+let minuteurEpreuve = null;
+
+document.getElementById("btn-lancer-epreuve").addEventListener("click", async () => {
+  const { classe, matiere } = classeEtMatiereRessource();
+  if (!matiere) { alert("Indique une matière avant de lancer l'épreuve."); return; }
+  const dureeMinutes = Number(document.getElementById("epreuve-duree").value);
+  const zone = document.getElementById("epreuve-zone");
+  document.getElementById("epreuve-config").hidden = true;
+  zone.hidden = false;
+  zone.innerHTML = `<p class="chargement-guide">${texteTraduit("jeuxPreparation")}</p>`;
+
+  const prompt = `Génère exactement 6 questions à choix multiples de niveau examen sur la matière "${matiere}" (${classe}). ` +
+    `Réponds UNIQUEMENT avec un tableau JSON valide : [{"question": "...", "choix": ["...","...","...","..."], "reponse": 0}]`;
+
+  try {
+    const questions = await demanderTableauJSON(prompt, selecteurLangue.value);
+    let secondesRestantes = dureeMinutes * 60;
+    let index = 0, score = 0;
+
+    minuteurEpreuve = setInterval(() => {
+      secondesRestantes--;
+      const min = Math.floor(secondesRestantes / 60), sec = secondesRestantes % 60;
+      const affichage = document.getElementById("epreuve-minuteur-texte");
+      if (affichage) {
+        affichage.textContent = `⏱️ ${min}:${sec.toString().padStart(2, "0")}`;
+        affichage.parentElement.classList.toggle("epreuve-urgence", secondesRestantes <= 60);
+      }
+      if (secondesRestantes <= 0) { clearInterval(minuteurEpreuve); terminerEpreuve(zone, score, questions.length, matiere, classe); }
+    }, 1000);
+
+    const afficherQ = () => {
+      const q = questions[index];
+      zone.innerHTML = `
+        <div class="epreuve-minuteur"><span id="epreuve-minuteur-texte">⏱️ ${dureeMinutes}:00</span></div>
+        <div class="jeu-progression">${index + 1} / ${questions.length}</div>
+        <div class="jeu-question">${echapperHtml(q.question)}</div>
+        <div class="jeu-choix">${q.choix.map((c, i) => `<button type="button" class="bouton-choix" data-index="${i}">${echapperHtml(c)}</button>`).join("")}</div>
+      `;
+      zone.querySelectorAll(".bouton-choix").forEach((bouton) => {
+        bouton.addEventListener("click", () => {
+          const choisi = Number(bouton.dataset.index);
+          zone.querySelectorAll(".bouton-choix").forEach((b) => (b.disabled = true));
+          if (choisi === Number(q.reponse)) { bouton.classList.add("bonne-reponse"); score++; }
+          else {
+            bouton.classList.add("mauvaise-reponse");
+            zone.querySelectorAll(".bouton-choix")[q.reponse].classList.add("bonne-reponse");
+          }
+          const suite = document.createElement("button");
+          suite.type = "button";
+          suite.className = "bouton-envoyer jeu-suivant";
+          suite.textContent = index + 1 < questions.length ? texteTraduit("jeuxSuivant") : texteTraduit("jeuxTermine");
+          suite.addEventListener("click", () => {
+            index++;
+            if (index < questions.length) afficherQ();
+            else { clearInterval(minuteurEpreuve); terminerEpreuve(zone, score, questions.length, matiere, classe); }
+          });
+          zone.appendChild(suite);
+        });
+      });
+    };
+    afficherQ();
+  } catch {
+    zone.innerHTML = `<p>⚠️ ${texteTraduit("jeuxErreur")}</p>`;
+  }
+});
+
+function terminerEpreuve(zone, score, total, matiere, classe) {
+  zone.innerHTML = `
+    <p>🏁 Épreuve terminée : ${score} / ${total}</p>
+    <button type="button" class="bouton-etape-nav" id="btn-refaire-epreuve">↩ Recommencer</button>
+  `;
+  enregistrerActivite("quiz", matiere, "Épreuve blanche", score, total, classe);
+  document.getElementById("btn-refaire-epreuve").addEventListener("click", () => {
+    document.getElementById("epreuve-config").hidden = false;
+    zone.hidden = true;
+  });
+}
+
+// ---------- Planning de révision avant un contrôle ----------
+document.getElementById("btn-generer-planning").addEventListener("click", async () => {
+  const { classe, matiere } = classeEtMatiereRessource();
+  const date = document.getElementById("planning-date").value;
+  const chapitres = document.getElementById("planning-chapitres").value.trim();
+  const resultat = document.getElementById("planning-resultat");
+  if (!matiere || !date || !chapitres) { alert("Indique la matière, la date du contrôle et les chapitres."); return; }
+
+  resultat.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+  const aujourdHui = new Date().toISOString().split("T")[0];
+  const prompt = `Nous sommes le ${aujourdHui}. Un élève de ${classe} a un contrôle de ${matiere} le ${date}, sur les chapitres suivants : ${chapitres}. ` +
+    `Propose un planning de révision jour par jour jusqu'à cette date, réaliste (pas plus d'1h par jour), en répartissant les chapitres. ` +
+    `Réponds en texte simple, organisé par jour.`;
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: prompt, historique: [], langue: selecteurLangue.value }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+    resultat.textContent = data.reponse;
+  } catch (erreur) {
+    resultat.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
+  }
+});
+
 document.getElementById("btn-commencer-technique").addEventListener("click", () => {
   const matiere = etudeMatiereV2.value.trim();
   const sujet = etudeSujetV2.value.trim();
@@ -636,7 +1082,7 @@ document.getElementById("btn-commencer-technique").addEventListener("click", () 
     alert("Indique une matière et un sujet avant de commencer.");
     return;
   }
-  demarrerSeanceEtude(etudeNiveauChoisi, matiere, sujet, etudeTechniqueChoisie);
+  demarrerSeanceEtude(classeChoisie || etudeNiveauChoisi, matiere, sujet, etudeTechniqueChoisie);
 });
 
 document.getElementById("btn-retour-technique-etude").addEventListener("click", () => {
@@ -756,16 +1202,29 @@ async function chargerEtape(etape, instructionSupplementaire) {
       afficherCorrections();
     } else {
       const structuree = etape === "cours" || etape === "exemple";
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: prompt, historique: [], langue: selecteurLangue.value, structuree }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+      let data, reponseValide = false;
+
+      for (let essai = 0; essai < 2 && !reponseValide; essai++) {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question: prompt, historique: [], langue: selecteurLangue.value, structuree }),
+        });
+        data = await res.json();
+        if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+        if (!structuree) { reponseValide = true; break; }
+        try {
+          const test = extraireJSONObjet(data.reponse);
+          const explicationsValides = Array.isArray(test.explications) ? test.explications.length > 0 : !!test.explications;
+          reponseValide = !!(test.definition && explicationsValides && Array.isArray(test.exemples) && test.exemples.length >= 2);
+        } catch {
+          reponseValide = false;
+        }
+      }
+
       if (etape === "cours") {
         etudeCoursTexteBrut = data.reponse;
-        enregistrerActivite("cours", etudeContexte.matiere, etudeContexte.sujet);
+        enregistrerActivite("cours", etudeContexte.matiere, etudeContexte.sujet, null, null, etudeContexte.parcours);
       }
       afficherContenuEtape(etape, data.reponse, structuree);
     }
@@ -936,7 +1395,7 @@ async function afficherQuizEtude() {
             } else {
               etudeContenuEl.innerHTML = `<p>🎉 ${texteTraduit("jeuxScoreTexte").replace("{score}", score).replace("{total}", questions.length)}</p>${construireNavigationEtude()}`;
               brancherNavigationEtude();
-              enregistrerActivite("quiz", etudeContexte.matiere, etudeContexte.sujet, score, questions.length);
+              enregistrerActivite("quiz", etudeContexte.matiere, etudeContexte.sujet, score, questions.length, etudeContexte.parcours);
             }
           });
           etudeContenuEl.appendChild(boutonSuite);
@@ -3214,13 +3673,13 @@ const LIBELLES_TYPE_ACTIVITE = {
 
 // enregistre discrètement une activité terminée — jamais bloquant pour
 // l'utilisateur : si ça échoue (pas connecté, réseau...), on l'ignore
-async function enregistrerActivite(typeActivite, matiere, sujet, score, total) {
+async function enregistrerActivite(typeActivite, matiere, sujet, score, total, classe) {
   if (!localStorage.getItem("inous_jeton")) return;
   try {
     await fetchAuthentifie("/api/profil/activite", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type_activite: typeActivite, matiere, sujet, score, total }),
+      body: JSON.stringify({ type_activite: typeActivite, matiere, sujet, score, total, classe: classe || null }),
     });
   } catch {
     // best-effort, silencieux
