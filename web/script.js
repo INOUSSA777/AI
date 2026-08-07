@@ -936,7 +936,7 @@ document.getElementById("btn-generer-fiches").addEventListener("click", async ()
   try {
     const res = await fetchAuthentifie("/api/fiches/generer", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ matiere, classe, sujet }),
+      body: JSON.stringify({ matiere, classe, sujet, texte_source: etudePdfTexte }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
@@ -945,6 +945,33 @@ document.getElementById("btn-generer-fiches").addEventListener("click", async ()
     chargerFichesAReviser();
   } catch (erreur) {
     statut.textContent = "⚠️ " + erreur.message;
+  }
+});
+
+document.getElementById("btn-techniques-memorisation").addEventListener("click", async () => {
+  const { matiere } = classeEtMatiereRessource();
+  const sujet = document.getElementById("fiches-sujet").value.trim() || etudeContexte.sujet;
+  const resultat = document.getElementById("techniques-memorisation-resultat");
+  if (!matiere || !sujet) { alert("Indique la matière et un sujet (dans le champ ci-dessus)."); return; }
+
+  resultat.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+  const contextePdf = etudePdfTexte
+    ? `Base-toi sur ce cours réel fourni par l'élève :\n"""${etudePdfTexte.slice(0, 6000)}"""\n\n`
+    : "";
+  const prompt = contextePdf + `Propose 3 à 4 techniques concrètes de mémorisation à long terme (moyens mnémotechniques, ` +
+    `associations d'idées, méthode des loci, acronymes, histoires imagées...) pour retenir durablement les définitions ` +
+    `et notions clés sur "${sujet}" (matière : ${matiere}). Sois concret : donne l'astuce ET un exemple appliqué à ce sujet précis, pas juste la théorie générale.`;
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: prompt, historique: [], langue: selecteurLangue.value }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+    resultat.innerHTML = `<div class="tableau-texte" style="background:linear-gradient(160deg,#3a2d5c,#2a2048);">${echapperHtml(data.reponse).replace(/\n/g, "<br>")}</div>`;
+  } catch (erreur) {
+    resultat.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
   }
 });
 
@@ -981,7 +1008,10 @@ document.getElementById("btn-lancer-epreuve").addEventListener("click", async ()
   zone.hidden = false;
   zone.innerHTML = `<p class="chargement-guide">${texteTraduit("jeuxPreparation")}</p>`;
 
-  const prompt = `Génère exactement 6 questions à choix multiples de niveau examen sur la matière "${matiere}" (${classe}). ` +
+  const contextePdfEpreuve = etudePdfTexte
+    ? `Base-toi PRINCIPALEMENT sur ce cours réel fourni par l'élève : \n"""${etudePdfTexte.slice(0, 6000)}"""\n\n`
+    : "";
+  const prompt = contextePdfEpreuve + `Génère exactement 6 questions à choix multiples de niveau examen sur la matière "${matiere}" (${classe}). ` +
     `Réponds UNIQUEMENT avec un tableau JSON valide : [{"question": "...", "choix": ["...","...","...","..."], "reponse": 0}]`;
 
   try {
@@ -1072,6 +1102,47 @@ document.getElementById("btn-generer-planning").addEventListener("click", async 
     resultat.textContent = data.reponse;
   } catch (erreur) {
     resultat.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
+  }
+});
+
+// ---------- import PDF optionnel pour baser le cours sur un vrai document ----------
+let etudePdfTexte = null;
+let etudePdfNom = null;
+
+document.getElementById("etude-pdf-fichier").addEventListener("change", async () => {
+  const fichier = document.getElementById("etude-pdf-fichier").files[0];
+  const statut = document.getElementById("etude-pdf-statut");
+  if (!fichier) return;
+
+  statut.hidden = false;
+  statut.innerHTML = `<span>${texteTraduit("reflexion")}</span>`;
+
+  const controleur = new AbortController();
+  const delaiExpiration = setTimeout(() => controleur.abort(), 45000); // jamais bloqué plus de 45s
+
+  try {
+    const formData = new FormData();
+    formData.append("fichier", fichier);
+    const res = await fetch("/api/importer-pdf", { method: "POST", body: formData, signal: controleur.signal });
+    clearTimeout(delaiExpiration);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+
+    etudePdfTexte = data.texte;
+    etudePdfNom = data.nom;
+    statut.innerHTML = `<span>📄 ${echapperHtml(etudePdfNom)}${data.tronque ? " (partiel)" : ""}</span><button type="button" id="btn-retirer-pdf-etude">Retirer</button>`;
+    document.getElementById("btn-retirer-pdf-etude").addEventListener("click", () => {
+      etudePdfTexte = null;
+      etudePdfNom = null;
+      document.getElementById("etude-pdf-fichier").value = "";
+      statut.hidden = true;
+    });
+  } catch (erreur) {
+    clearTimeout(delaiExpiration);
+    const message = erreur.name === "AbortError"
+      ? "Le PDF est trop volumineux ou trop lent à traiter (plus de 45s). Essaie un fichier plus léger."
+      : erreur.message;
+    statut.innerHTML = `<span>⚠️ ${echapperHtml(message)}</span>`;
   }
 });
 
@@ -1168,18 +1239,21 @@ async function chargerEtape(etape, instructionSupplementaire) {
 
   const { sujet } = etudeContexte;
   const base = libelleParcoursPourPrompt();
+  const contextePdf = etudePdfTexte
+    ? `\n\nBase-toi PRINCIPALEMENT sur le contenu réel de ce document fourni par l'utilisateur (ne t'en écarte pas, n'invente rien qui le contredit) :\n"""${etudePdfTexte.slice(0, 6000)}"""\n`
+    : "";
   let prompt = "";
 
   if (etape === "cours") {
     prompt = `Fais un cours clair sur "${sujet}" (${base}). Structure : une définition précise, puis les points clés. ` +
       `Utilise du LaTeX entre symboles $ pour toute formule mathématique s'il y en a. Reste concis (une leçon, pas un livre). ` +
-      (instructionSupplementaire || "");
+      (instructionSupplementaire || "") + contextePdf;
   } else if (etape === "exemple") {
-    prompt = `Donne un exemple concret entièrement résolu, étape par étape, sur "${sujet}" (${base}). Utilise du LaTeX entre $ pour les formules.`;
+    prompt = `Donne un exemple concret entièrement résolu, étape par étape, sur "${sujet}" (${base}). Utilise du LaTeX entre $ pour les formules.` + contextePdf;
   } else if (etape === "exercices") {
     prompt = `Propose exactement 4 exercices d'entraînement sur "${sujet}" (${base}), de difficulté progressive. ` +
       `Réponds UNIQUEMENT avec un tableau JSON valide, sans texte autour, au format : ` +
-      `[{"titre": "...", "difficulte": "Facile|Moyen|Difficile", "enonce": "..."}]`;
+      `[{"titre": "...", "difficulte": "Facile|Moyen|Difficile", "enonce": "..."}]` + contextePdf;
   } else if (etape === "bilan") {
     prompt = `Fais un court bilan encourageant (3-4 phrases) pour clôturer une séance d'étude sur "${sujet}" (${base}), ` +
       `en rappelant le point clé à retenir.`;
@@ -3439,6 +3513,7 @@ const biblioPoserQuestion = document.getElementById("biblio-poser-question");
 const biblioResultat = document.getElementById("biblio-resultat");
 
 let documentImporte = null; // { nom, texte, tronque }
+let suiviDocument = { resume: false, quiz: false, fiches: false, exercices: false };
 
 biblioFichier.addEventListener("change", async () => {
   const fichier = biblioFichier.files[0];
@@ -3455,6 +3530,9 @@ biblioFichier.addEventListener("change", async () => {
 
     documentImporte = { nom: data.nom, texte: data.texte, tronque: data.tronque };
     biblioStatutDoc.textContent = `✅ ${data.nom} importé` + (data.tronque ? " (document long, seule la première partie est prise en compte)" : "");
+    suiviDocument = { resume: false, quiz: false, fiches: false, exercices: false };
+    mettreAJourSuiviDocument();
+    genererApercuDocument();
   } catch (erreur) {
     biblioStatutDoc.textContent = `⚠️ ${erreur.message}`;
     documentImporte = null;
@@ -3502,16 +3580,111 @@ grilleActionsBiblio.querySelectorAll(".carte-action-biblio").forEach((bouton) =>
     const consignes = {
       resumer: "Fais un résumé clair et structuré de ce document, avec un retour à la ligne entre chaque idée.",
       quiz: "Génère 4 questions à choix multiples pour vérifier la compréhension de ce document. Réponds UNIQUEMENT avec un tableau JSON valide : [{\"question\": \"...\", \"choix\": [\"...\",\"...\",\"...\",\"...\"], \"reponse\": 0}]",
-      fiche: "Fais une fiche de révision synthétique (points clés) à partir de ce document, avec un retour à la ligne entre chaque idée.",
+      expliquer: "Réécris les notions les plus difficiles de ce document avec des mots simples et des exemples concrets, comme si tu expliquais à un élève qui découvre le sujet.",
+      exercices: "Propose 3 exercices d'entraînement corrigés à partir de ce document (énoncé puis corrigé détaillé), avec un retour à la ligne entre chaque partie.",
+      memorisation: "Propose 3 à 4 techniques concrètes de mémorisation à long terme (associations, acronymes, méthode des loci...) pour retenir les notions clés de ce document, avec un exemple appliqué pour chacune.",
     };
 
     if (action === "quiz") {
       genererQuizDocument();
+      suiviDocument.quiz = true;
+    } else if (action === "cartementale") {
+      genererCarteMentaleDocument();
+    } else if (action === "fiche") {
+      genererFichesDocument();
+      suiviDocument.fiches = true;
     } else {
       interrogerDocument(consignes[action]);
+      if (action === "resumer") suiviDocument.resume = true;
+      if (action === "exercices") suiviDocument.exercices = true;
     }
+    mettreAJourSuiviDocument();
   });
 });
+
+function mettreAJourSuiviDocument() {
+  const suivi = document.getElementById("biblio-suivi");
+  const liste = document.getElementById("biblio-suivi-liste");
+  if (!documentImporte) { suivi.hidden = true; return; }
+  suivi.hidden = false;
+  const items = [
+    ["resume", "📘 Résumé consulté"],
+    ["quiz", "✅ Quiz fait"],
+    ["fiches", "📇 Fiches créées"],
+    ["exercices", "✏️ Exercices faits"],
+  ];
+  liste.innerHTML = items.map(([cle, libelle]) =>
+    `<span class="suivi-item ${suiviDocument[cle] ? "fait" : ""}">${suiviDocument[cle] ? "✅" : "⬜"} ${libelle}</span>`
+  ).join("");
+}
+
+async function genererApercuDocument() {
+  const apercu = document.getElementById("biblio-apercu");
+  const contenu = document.getElementById("biblio-apercu-contenu");
+  apercu.hidden = false;
+  contenu.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+
+  const prompt = `Voici le contenu d'un document :\n\n"""${documentImporte.texte}"""\n\n` +
+    `Analyse-le et réponds UNIQUEMENT avec un objet JSON valide, sans texte autour, au format : ` +
+    `{"chapitres": ["titre du chapitre/section 1", "..."], "resume_points": ["point clé 1", "point clé 2", "point clé 3"], "concepts": ["concept 1", "concept 2", "..."]}`;
+
+  try {
+    const donnees = await demanderObjetJSON(prompt, selecteurLangue.value);
+    contenu.innerHTML = `
+      <div class="apercu-grille">
+        <div class="apercu-bloc">
+          <h4>📑 Chapitres détectés</h4>
+          <ul>${(donnees.chapitres || []).map((c) => `<li>${echapperHtml(c)}</li>`).join("")}</ul>
+        </div>
+        <div class="apercu-bloc">
+          <h4>🔑 Points clés</h4>
+          <ul>${(donnees.resume_points || []).map((c) => `<li>${echapperHtml(c)}</li>`).join("")}</ul>
+        </div>
+        <div class="apercu-bloc">
+          <h4>🏷️ Concepts importants</h4>
+          <div class="apercu-tags">${(donnees.concepts || []).map((c) => `<span class="apercu-tag">${echapperHtml(c)}</span>`).join("")}</div>
+        </div>
+      </div>
+    `;
+  } catch {
+    apercu.hidden = true; // aperçu optionnel : on n'affiche rien plutôt qu'une erreur intrusive
+  }
+}
+
+async function genererCarteMentaleDocument() {
+  biblioResultat.hidden = false;
+  biblioResultat.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+  const prompt = `Voici le contenu d'un document :\n\n"""${documentImporte.texte}"""\n\n` +
+    `Crée une carte mentale de ce document. Réponds UNIQUEMENT avec un objet JSON valide : ` +
+    `{"centre": "titre très court du document", "branches": [{"titre": "...", "points": ["...", "..."]}]} avec 4 à 6 branches.`;
+  try {
+    const donnees = await demanderObjetJSON(prompt, selecteurLangue.value);
+    biblioResultat.innerHTML = construireCarteMentaleSVG(donnees);
+  } catch {
+    biblioResultat.innerHTML = `<p>⚠️ ${texteTraduit("jeuxErreur")}</p>`;
+  }
+}
+
+async function genererFichesDocument() {
+  biblioResultat.hidden = false;
+  if (!localStorage.getItem("inous_jeton")) {
+    biblioResultat.innerHTML = `<p>Connecte-toi pour créer des fiches de révision à partir de ce document.</p>`;
+    return;
+  }
+  biblioResultat.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+  try {
+    const res = await fetchAuthentifie("/api/fiches/generer", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matiere: documentImporte.nom, classe: "", sujet: documentImporte.nom, texte_source: documentImporte.texte }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+    biblioResultat.innerHTML = `<p>✅ ${data.length} fiches créées à partir de ce document !</p><p class="guide-desc">Retrouve-les dans Étudier avec moi → une classe → onglet 📇 Fiches (matière : "${echapperHtml(documentImporte.nom)}").</p>`;
+  } catch (erreur) {
+    biblioResultat.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
+  }
+}
+
 
 biblioPoserQuestion.addEventListener("click", () => {
   const question = biblioQuestionTexte.value.trim();

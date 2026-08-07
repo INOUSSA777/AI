@@ -167,6 +167,14 @@
             <label>Sujet précis</label>
             <input type="text" id="etude-sujet-v2" placeholder="Ex : les fractions, la dérivation…">
           </div>
+
+          <div class="etude-pdf-import">
+            <label class="etude-pdf-bouton" for="etude-pdf-fichier">📄 Ou importe un PDF de cours (optionnel)</label>
+            <input type="file" id="etude-pdf-fichier" accept=".pdf" hidden>
+            <p class="guide-desc" style="margin:4px 0 0;">Le cours sera basé sur ce document plutôt qu'inventé par l'IA.</p>
+            <div class="etude-pdf-statut" id="etude-pdf-statut" hidden></div>
+          </div>
+
           <button type="button" class="bouton-envoyer bouton-guide" id="btn-commencer-technique">Commencer</button>
         </div>
 
@@ -231,6 +239,9 @@
             </div>
             <button type="button" class="bouton-envoyer" id="btn-generer-fiches">🤖 Générer des fiches sur ce sujet</button>
             <p class="statut-envoi-lot" id="statut-fiches"></p>
+
+            <button type="button" class="bouton-etape-nav" id="btn-techniques-memorisation" style="margin-top:12px;">🧠 Techniques pour retenir à long terme</button>
+            <div id="techniques-memorisation-resultat"></div>
           </div>
 
           <!-- Suivi de maîtrise par chapitre -->
@@ -478,10 +489,14 @@
 
       <h3 class="biblio-section-titre" data-i18n="biblioQueVeuxTu">Que veux-tu faire avec ce document ?</h3>
       <div class="grille-actions-biblio" id="grille-actions-biblio">
-        <button type="button" class="carte-action-biblio" data-action="resumer">📘 <span data-i18n="biblioResumer">Résumer le document</span></button>
-        <button type="button" class="carte-action-biblio" data-action="quiz">✅ <span data-i18n="biblioQuiz">Créer un quiz dessus</span></button>
-        <button type="button" class="carte-action-biblio" data-action="fiche">📄 <span data-i18n="biblioFiche">Créer une fiche de révision</span></button>
-        <button type="button" class="carte-action-biblio" data-action="question">❓ <span data-i18n="biblioQuestion">Poser une question précise</span></button>
+        <button type="button" class="carte-action-biblio" data-action="resumer">📘 <span data-i18n="biblioResumer">Résumé intelligent</span></button>
+        <button type="button" class="carte-action-biblio" data-action="expliquer">💡 Explications simplifiées</button>
+        <button type="button" class="carte-action-biblio" data-action="cartementale">🧠 Carte mentale</button>
+        <button type="button" class="carte-action-biblio" data-action="fiche">📇 Fiches de révision</button>
+        <button type="button" class="carte-action-biblio" data-action="question">❓ <span data-i18n="biblioQuestion">Questions & Réponses</span></button>
+        <button type="button" class="carte-action-biblio" data-action="exercices">✏️ Exercices corrigés</button>
+        <button type="button" class="carte-action-biblio" data-action="quiz">✅ <span data-i18n="biblioQuiz">Quiz interactif</span></button>
+        <button type="button" class="carte-action-biblio" data-action="memorisation">🎯 Techniques de mémorisation</button>
       </div>
 
       <div class="biblio-question-libre" id="biblio-question-libre" hidden>
@@ -490,6 +505,16 @@
       </div>
 
       <div class="concours-resultat" id="biblio-resultat" hidden></div>
+
+      <div class="biblio-apercu" id="biblio-apercu" hidden>
+        <h3 class="biblio-section-titre">🔎 Aperçu du document</h3>
+        <div id="biblio-apercu-contenu"></div>
+      </div>
+
+      <div class="biblio-suivi" id="biblio-suivi" hidden>
+        <h3 class="biblio-section-titre">📈 Ce que tu as fait sur ce document</h3>
+        <div class="biblio-suivi-liste" id="biblio-suivi-liste"></div>
+      </div>
 
       <p class="note-avertissement" data-i18n="biblioNote">ℹ️ Rien n'est sauvegardé sur le serveur : le document reste en mémoire seulement pendant que cette page est ouverte.</p>
 

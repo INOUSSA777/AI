@@ -16,8 +16,13 @@ from services import chat_ai
 INTERVALLES_BOITE = {1: 0, 2: 2, 3: 4, 4: 7, 5: 14}
 
 
-def generer_fiches(id_utilisateur: str, matiere: str, classe: str, sujet: str, nombre: int = 6) -> list[dict]:
+def generer_fiches(id_utilisateur: str, matiere: str, classe: str, sujet: str, nombre: int = 6, texte_source: str | None = None) -> list[dict]:
+    base_source = (
+        f'Base-toi PRINCIPALEMENT sur le contenu réel de ce cours fourni par l\'élève (ne t\'en écarte pas) :\n"""{texte_source[:6000]}"""\n\n'
+        if texte_source else ""
+    )
     prompt = (
+        base_source +
         f'Crée {nombre} fiches de révision façon flashcards sur "{sujet}" (matière : {matiere}, niveau {classe}). '
         f'Chaque fiche : un recto court (question ou notion) et un verso concis (réponse/explication). '
         f'Réponds UNIQUEMENT avec un tableau JSON valide, sans texte autour : '

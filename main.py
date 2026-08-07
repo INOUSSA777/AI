@@ -75,6 +75,7 @@ class GenererFiches(BaseModel):
     matiere: str
     classe: str
     sujet: str
+    texte_source: str | None = None
 
 
 class ReponseFiche(BaseModel):
@@ -323,7 +324,9 @@ def generer_fiches_route(donnees: GenererFiches, authorization: str = ""):
     if not utilisateur:
         raise HTTPException(status_code=401, detail="Connecte-toi pour générer des fiches.")
     try:
-        return revision_service.generer_fiches(utilisateur.id, donnees.matiere, donnees.classe, donnees.sujet)
+        return revision_service.generer_fiches(
+            utilisateur.id, donnees.matiere, donnees.classe, donnees.sujet, texte_source=donnees.texte_source
+        )
     except Exception as erreur:
         raise HTTPException(status_code=500, detail=str(erreur))
 

@@ -202,6 +202,9 @@ def extraire_texte_pdf(pdf_bytes: bytes) -> tuple[str, bool]:
     Ne stocke rien sur le serveur : le texte est renvoyé au frontend, qui le
     garde en mémoire le temps de la session (rien ne persiste après un
     rechargement de la page).
+    S'arrête dès que la limite utile est atteinte plutôt que de lire tout le
+    document — sur un PDF de plusieurs centaines de pages, lire l'intégralité
+    avant de tronquer pouvait prendre très longtemps (voire sembler bloqué).
     """
     import io
 
@@ -209,10 +212,18 @@ def extraire_texte_pdf(pdf_bytes: bytes) -> tuple[str, bool]:
 
     lecteur = PdfReader(io.BytesIO(pdf_bytes))
     morceaux = []
+    longueur_actuelle = 0
+    a_ete_tronque = False
+
     for page in lecteur.pages:
         texte_page = page.extract_text() or ""
         morceaux.append(texte_page)
+        longueur_actuelle += len(texte_page)
+        if longueur_actuelle >= LIMITE_CARACTERES_PDF:
+            a_ete_tronque = len(lecteur.pages) > len(morceaux)
+            break
 
     texte_complet = "\n".join(morceaux).strip()
-    a_ete_tronque = len(texte_complet) > LIMITE_CARACTERES_PDF
+    if len(texte_complet) > LIMITE_CARACTERES_PDF:
+        a_ete_tronque = True
     return texte_complet[:LIMITE_CARACTERES_PDF], a_ete_tronque

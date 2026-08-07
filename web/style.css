@@ -515,6 +515,33 @@ body {
 /* ---------- planning ---------- */
 #planning-resultat { margin-top: 16px; line-height: 1.7; color: var(--craie-douce); white-space: pre-wrap; }
 
+.etude-pdf-import { margin: 4px 0 14px; }
+.etude-pdf-bouton {
+  display: inline-block;
+  cursor: pointer;
+  background: var(--surface-haute);
+  border: 1px dashed rgba(91,155,213,0.4);
+  border-radius: 8px;
+  padding: 9px 14px;
+  color: var(--bleu);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.etude-pdf-bouton:hover { border-color: var(--bleu); }
+.etude-pdf-statut {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  color: var(--craie-douce);
+  background: rgba(95,191,138,0.1);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.etude-pdf-statut[hidden] { display: none; }
+.etude-pdf-statut button { all: unset; cursor: pointer; color: var(--erreur); font-size: 0.78rem; }
+
 .etude-sujet-formulaire input {
   background: var(--surface-haute);
   border: 1px solid rgba(242,239,226,0.1);
@@ -1570,6 +1597,38 @@ body {
   text-align: center;
 }
 .carte-action-biblio:hover { border-color: var(--violet); color: var(--craie); }
+
+/* ---------- aperçu automatique du document ---------- */
+.biblio-apercu {
+  margin: 24px 0;
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid rgba(139,111,216,0.2);
+}
+.biblio-apercu[hidden] { display: none; }
+.apercu-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; }
+.apercu-bloc h4 { margin: 0 0 8px; color: var(--craie); font-size: 0.9rem; }
+.apercu-bloc ul { margin: 0; padding-left: 18px; color: var(--craie-douce); font-size: 0.85rem; line-height: 1.6; }
+.apercu-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.apercu-tag {
+  background: rgba(232,183,92,0.14);
+  color: var(--accent);
+  font-size: 0.72rem;
+  padding: 3px 10px;
+  border-radius: 10px;
+}
+
+/* ---------- suivi réel des actions sur ce document ---------- */
+.biblio-suivi[hidden] { display: none; }
+.biblio-suivi { margin: 20px 0; }
+.biblio-suivi-liste { display: flex; flex-wrap: wrap; gap: 10px; }
+.suivi-item {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--surface); border-radius: 20px;
+  padding: 7px 14px; font-size: 0.8rem; color: var(--muet);
+}
+.suivi-item.fait { color: #5fbf8a; }
 
 .biblio-question-libre {
   display: flex;
