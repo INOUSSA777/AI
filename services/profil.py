@@ -136,3 +136,88 @@ def obtenir_maitrise(id_utilisateur: str, classe: str | None) -> list[dict]:
             "niveau": niveau, "vues": data["vues"],
         })
     return sorted(resultat, key=lambda r: (r["moyenne"] is None, r["moyenne"] or 0))
+
+
+# Chaque badge décrit une condition vérifiable sur des données réelles —
+# jamais un badge "juste pour faire joli" sans vraie condition derrière.
+DEFINITIONS_BADGES = [
+    {"id": "premiere_seance", "icone": "🌱", "titre": "Premier pas", "desc": "Ta toute première séance"},
+    {"id": "dix_seances", "icone": "📚", "titre": "Habitué", "desc": "10 séances complétées"},
+    {"id": "cinquante_seances", "icone": "🎓", "titre": "Assidu", "desc": "50 séances complétées"},
+    {"id": "serie_3", "icone": "🔥", "titre": "Sur ta lancée", "desc": "3 jours d'affilée"},
+    {"id": "serie_7", "icone": "🔥", "titre": "Une semaine complète", "desc": "7 jours d'affilée"},
+    {"id": "serie_30", "icone": "🏆", "titre": "Un mois entier", "desc": "30 jours d'affilée"},
+    {"id": "premier_100", "icone": "💯", "titre": "Sans faute", "desc": "Un premier quiz réussi à 100%"},
+    {"id": "cent_points", "icone": "⭐", "titre": "100 points", "desc": "100 points cumulés"},
+    {"id": "cinq_cents_points", "icone": "🌟", "titre": "500 points", "desc": "500 points cumulés"},
+]
+
+
+def obtenir_badges(id_utilisateur: str) -> list[dict]:
+    client = auth_service.obtenir_client()
+    profil = client.table("profils").select("*").eq("id", id_utilisateur).single().execute().data
+    historique = (
+        client.table("historique_apprentissage").select("*").eq("user_id", id_utilisateur).execute().data
+    )
+
+    points = profil.get("points") or 0
+    serie = profil.get("serie_actuelle") or 0
+    nb_seances = len(historique)
+    a_un_100 = any(h.get("total") and h.get("score") == h.get("total") for h in historique)
+
+    obtenus = set()
+    if nb_seances >= 1:
+        obtenus.add("premiere_seance")
+    if nb_seances >= 10:
+        obtenus.add("dix_seances")
+    if nb_seances >= 50:
+        obtenus.add("cinquante_seances")
+    if serie >= 3:
+        obtenus.add("serie_3")
+    if serie >= 7:
+        obtenus.add("serie_7")
+    if serie >= 30:
+        obtenus.add("serie_30")
+    if a_un_100:
+        obtenus.add("premier_100")
+    if points >= 100:
+        obtenus.add("cent_points")
+    if points >= 500:
+        obtenus.add("cinq_cents_points")
+
+    return [
+        {**b, "obtenu": b["id"] in obtenus}
+        for b in DEFINITIONS_BADGES
+    ]
+
+
+def definir_parametres_classement(id_utilisateur: str, classe: str, visible: bool) -> dict:
+    """L'élève choisit lui-même sa classe et s'il veut apparaître dans le classement."""
+    client = auth_service.obtenir_client()
+    client.table("profils").update({
+        "classe": classe, "visible_classement": visible,
+    }).eq("id", id_utilisateur).execute()
+    return {"classe": classe, "visible_classement": visible}
+
+
+def obtenir_classement(classe: str, id_utilisateur_actuel: str) -> dict:
+    """
+    Classement réel par points, uniquement entre élèves qui ont choisi d'y
+    participer (visible_classement = true) et déclaré la même classe.
+    """
+    client = auth_service.obtenir_client()
+    profils = (
+        client.table("profils")
+        .select("id, points, serie_actuelle")
+        .eq("classe", classe)
+        .eq("visible_classement", True)
+        .order("points", desc=True)
+        .limit(20)
+        .execute()
+        .data
+    )
+    classement = [
+        {"rang": i + 1, "points": p["points"] or 0, "serie": p["serie_actuelle"] or 0, "toi": p["id"] == id_utilisateur_actuel}
+        for i, p in enumerate(profils)
+    ]
+    return {"classement": classement, "y_participe": any(c["toi"] for c in classement)}

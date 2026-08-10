@@ -7,3 +7,4 @@ gTTS==2.5.4
 pypdf==5.1.0
 supabase>=2.11.0
 python-docx==1.1.2
+pywebpush==2.4.0

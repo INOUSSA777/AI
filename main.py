@@ -25,6 +25,8 @@ from services import bibliotheque as bibliotheque_service
 from services import profil as profil_service
 from services import ressources as ressources_service
 from services import revision as revision_service
+from services import devoirs as devoirs_service
+from services import notifications as notifications_service
 
 app = FastAPI(title="INOUS.AI")
 
@@ -113,6 +115,30 @@ class CodeReinitialisation(BaseModel):
     email: str
     code: str
     nouveau_mot_de_passe: str
+
+
+class ParametresClassement(BaseModel):
+    classe: str
+    visible: bool
+
+
+class DevoirAAssigner(BaseModel):
+    matiere: str
+    classe: str
+    question: str
+    choix: list[str]
+    reponse_index: int
+    explication: str = ""
+    date_limite: str
+
+
+class DevoirFait(BaseModel):
+    score: int
+    total: int
+
+
+class AbonnementPush(BaseModel):
+    abonnement: dict
 
 
 @app.get("/api/sante")
@@ -368,6 +394,142 @@ def historique_profil(authorization: str = ""):
         }
     except Exception as erreur:
         raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.get("/api/profil/badges")
+def badges_route(authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Non connecté.")
+    try:
+        return profil_service.obtenir_badges(utilisateur.id)
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.post("/api/profil/classement-parametres")
+def classement_parametres_route(donnees: ParametresClassement, authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Non connecté.")
+    try:
+        return profil_service.definir_parametres_classement(utilisateur.id, donnees.classe, donnees.visible)
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.get("/api/classement")
+def classement_route(classe: str, authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Non connecté.")
+    try:
+        return profil_service.obtenir_classement(classe, utilisateur.id)
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.get("/api/enseignant/stats")
+def enseignant_stats_route(authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Non connecté.")
+    try:
+        return ressources_service.obtenir_stats_enseignant(utilisateur.id)
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.post("/api/devoirs")
+def assigner_devoir_route(donnees: DevoirAAssigner, authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Connecte-toi pour assigner un devoir.")
+    try:
+        return devoirs_service.assigner_devoir(
+            utilisateur.id, donnees.matiere, donnees.classe, donnees.question,
+            donnees.choix, donnees.reponse_index, donnees.explication, donnees.date_limite,
+        )
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.get("/api/devoirs/classe")
+def devoirs_classe_route(classe: str, authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Connecte-toi pour voir tes devoirs.")
+    try:
+        devoirs = devoirs_service.lister_devoirs_classe(classe)
+        faits = {d["devoir_id"] for d in devoirs_service.devoirs_faits_par(utilisateur.id)}
+        for d in devoirs:
+            d["fait"] = d["id"] in faits
+        return devoirs
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.get("/api/devoirs/assignes")
+def devoirs_assignes_route(authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Connecte-toi.")
+    try:
+        return devoirs_service.lister_devoirs_assignes(utilisateur.id)
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.post("/api/devoirs/{id_devoir}/fait")
+def devoir_fait_route(id_devoir: str, donnees: DevoirFait, authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Connecte-toi.")
+    try:
+        return devoirs_service.marquer_devoir_fait(utilisateur.id, id_devoir, donnees.score, donnees.total)
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.get("/api/notifications/cle-publique")
+def cle_publique_notifications():
+    """Renvoie la clé publique VAPID nécessaire au navigateur pour s'abonner."""
+    return {"cle_publique": os.getenv("VAPID_PUBLIC_KEY", "")}
+
+
+@app.post("/api/notifications/abonnement")
+def abonnement_notifications_route(donnees: AbonnementPush, authorization: str = ""):
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Connecte-toi pour activer les notifications.")
+    try:
+        return notifications_service.enregistrer_abonnement(utilisateur.id, donnees.abonnement)
+    except Exception as erreur:
+        raise HTTPException(status_code=500, detail=str(erreur))
+
+
+@app.post("/api/notifications/test")
+def notification_test_route(authorization: str = ""):
+    """Envoie une vraie notification de test, pour vérifier que ça fonctionne."""
+    jeton = authorization.replace("Bearer ", "")
+    utilisateur = auth_service.utilisateur_depuis_jeton(jeton)
+    if not utilisateur:
+        raise HTTPException(status_code=401, detail="Connecte-toi.")
+    envoye = notifications_service.envoyer_notification(
+        utilisateur.id, "INOUS.AI", "🔔 Ceci est une vraie notification de test !"
+    )
+    if not envoye:
+        raise HTTPException(status_code=400, detail="Notification non envoyée (pas encore activée, ou clé serveur manquante).")
+    return {"ok": True}
 
 
 @app.post("/api/videos/lien")

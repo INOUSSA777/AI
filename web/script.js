@@ -49,6 +49,7 @@ const TRADUCTIONS = {
     sousTitre: "L'intelligence artificielle pour améliorer ton apprentissage",
     modeChat: "Assistant IA",
     modeEtude: "Étudier avec moi",
+    modeProfil: "Mon profil",
     modeOrientation: "Orientation",
     modeImage: "Analyser une image",
     modeGeneration: "Générer une image",
@@ -127,6 +128,19 @@ const TRADUCTIONS = {
     modeConcours: "Prépa Concours",
     anticipationsIntro: "Ça pourrait aussi t'intéresser :",
     modeBibliotheque: "Bibliothèque",
+    concoursTitre: "Préparation concours",
+    concoursAccesRapide: "Accès rapide",
+    concoursAnnales: "Sujets & Annales",
+    concoursConseilsTitre: "Conseil du jour",
+    concoursFiches: "Fiches de révision",
+    concoursPopulaires: "Concours nationaux",
+    concoursQcm: "QCM d'entraînement",
+    etapeBilanDesc: "Fin de séance",
+    etapeCorrectionDesc: "Voir les corrigés",
+    etapeCoursDesc: "Comprendre la leçon",
+    etapeExempleDesc: "Voir un cas résolu",
+    etapeExercicesDesc: "S'entraîner",
+    etapeQuizDesc: "Vérifier ta compréhension",
     biblioPasDeDocument: "⚠️ Importe d'abord un PDF avant de pouvoir l'utiliser.",
     biblioTitre: "Bibliothèque intelligente",
     biblioDesc: "Importe un document PDF et discute avec son contenu — résumé, quiz, questions, tout est généré pendant ta session.",
@@ -162,6 +176,7 @@ const TRADUCTIONS = {
     sousTitre: "Educational assistant",
     modeChat: "AI Assistant",
     modeEtude: "Study with me",
+    modeProfil: "My profile",
     modeOrientation: "Career guidance",
     modeImage: "Analyze an image",
     modeGeneration: "Generate an image",
@@ -242,6 +257,7 @@ const TRADUCTIONS = {
     sousTitre: "Karen-sõngda (assistant éducatif)",
     modeChat: "Karen-sõngda IA",
     modeEtude: "Zãms ne mam",
+    modeProfil: "Mam sõore",
     modeOrientation: "Sore-tũub",
     modeImage: "Fo foto ges-gu",
     modeGeneration: "Foto naaneg",
@@ -485,6 +501,8 @@ function masquerTousLesPanneaux() {
   ecranConcours.hidden = true;
   ecranBibliotheque.hidden = true;
   ecranProfil.hidden = true;
+  document.getElementById("ecran-calendrier").hidden = true;
+  document.getElementById("ecran-enseignant").hidden = true;
 }
 
 boutonsModes.forEach((bouton) => {
@@ -506,6 +524,12 @@ boutonsModes.forEach((bouton) => {
     } else if (modeActif === "profil") {
       ecranProfil.hidden = false;
       chargerMonProfil();
+    } else if (modeActif === "calendrier") {
+      document.getElementById("ecran-calendrier").hidden = false;
+      chargerCalendrier();
+    } else if (modeActif === "enseignant") {
+      document.getElementById("ecran-enseignant").hidden = false;
+      chargerEspaceEnseignant();
     }
 
     if (window.innerWidth <= 720) {
@@ -552,9 +576,15 @@ const NIVEAUX_ETUDE = [
 const TECHNIQUES_ETUDE = [
   { id: "lecture", icone: "📘", titre: "Lecture active", desc: "Comprends le cours en profondeur, étape par étape.", disponible: true },
   { id: "cartementale", icone: "🧠", titre: "Cartes mentales", desc: "Visualise les idées d'un sujet organisées en schéma.", disponible: true },
-  { id: "video", icone: "🎥", titre: "Vidéos pédagogiques", desc: "Apprends en vidéo.", disponible: false },
   { id: "exercices", icone: "📝", titre: "Exercices pratiques", desc: "Applique ce que tu apprends avec des exercices corrigés.", disponible: true },
   { id: "quiz", icone: "🎯", titre: "Quiz et auto-évaluation", desc: "Teste tes connaissances et suis ta progression.", disponible: true },
+  { id: "fiches", icone: "📇", titre: "Fiches de révision", desc: "Révise avec des flashcards à répétition espacée.", disponible: true, outilDirect: "fiches" },
+  { id: "epreuve", icone: "⏱️", titre: "Épreuve blanche", desc: "Un vrai contrôle chronométré, avec correction.", disponible: true, outilDirect: "epreuve" },
+  { id: "memorisation", icone: "🧭", titre: "Techniques de mémorisation", desc: "Des astuces concrètes pour retenir à long terme.", disponible: true, outilDirect: "fiches" },
+  { id: "devoirs", icone: "📚", titre: "Mes devoirs", desc: "Les devoirs assignés par ton enseignant pour cette classe.", disponible: true, outilDirect: "devoirs" },
+  { id: "maitrise", icone: "📊", titre: "Ma maîtrise", desc: "Vois quels chapitres tu maîtrises déjà, ou pas encore.", disponible: true, outilDirect: "maitrise" },
+  { id: "planning", icone: "📅", titre: "Planning de révision", desc: "Organise tes révisions avant un contrôle.", disponible: true, outilDirect: "planning" },
+  { id: "video", icone: "🎥", titre: "Vidéos pédagogiques", desc: "Apprends en vidéo.", disponible: false },
   { id: "collaboratif", icone: "👥", titre: "Apprentissage collaboratif", desc: "Échange avec d'autres apprenants.", disponible: false },
 ];
 
@@ -675,6 +705,9 @@ function validerClasseEtPasserTechnique(classe) {
   etudeNiveauChoisiTitre.textContent = `${etudeNiveauChoisi} — ${classe}`;
   etudeSujetFormulaire.hidden = true;
   etudeTechniqueChoisie = null;
+  document.getElementById("etude-bloc-choix-technique").hidden = false;
+  document.getElementById("btn-retour-vers-techniques").hidden = true;
+  document.getElementById("etude-outil-titre").hidden = true;
   rendreGrilleTechniques();
 }
 
@@ -684,6 +717,12 @@ document.getElementById("btn-retour-classe-niveau").addEventListener("click", ()
   etudeEtapeNiveau.hidden = false;
 });
 document.getElementById("btn-retour-classe-etape").addEventListener("click", retourEtapeClasse);
+
+document.getElementById("btn-retour-vers-techniques").addEventListener("click", () => {
+  document.getElementById("etude-bloc-choix-technique").hidden = false;
+  document.getElementById("btn-retour-vers-techniques").hidden = true;
+  document.getElementById("etude-outil-titre").hidden = true;
+});
 
 function choisirNiveauEtude(niveau) {
   etudeNiveauChoisi = niveau;
@@ -729,6 +768,28 @@ function rendreGrilleTechniques() {
       grilleTechniques.querySelectorAll(".carte-technique").forEach((c) => c.classList.remove("technique-selectionnee"));
       carte.classList.add("technique-selectionnee");
       etudeTechniqueChoisie = carte.dataset.technique;
+      const config = TECHNIQUES_ETUDE.find((t) => t.id === etudeTechniqueChoisie);
+
+      if (config && config.outilDirect) {
+        document.getElementById("etude-bloc-choix-technique").hidden = true;
+        etudeSujetFormulaire.hidden = true;
+
+        const titreOutil = document.getElementById("etude-outil-titre");
+        titreOutil.hidden = false;
+        titreOutil.textContent = `${config.icone} ${config.titre}`;
+        document.getElementById("btn-retour-vers-techniques").hidden = false;
+
+        document.querySelectorAll(".onglet-ressource").forEach((o) => o.classList.toggle("actif", o.dataset.onglet === config.outilDirect));
+        ongletRessourceActif = config.outilDirect;
+        ["videos", "exercices", "fiches", "maitrise", "epreuve", "planning", "devoirs"].forEach((id) => {
+          document.getElementById(`panneau-${id}`).hidden = ongletRessourceActif !== id;
+        });
+        if (ongletRessourceActif === "fiches") chargerFichesAReviser();
+        if (ongletRessourceActif === "maitrise") chargerMaitrise();
+        if (ongletRessourceActif === "devoirs") chargerDevoirsEleve();
+        return;
+      }
+
       etudeSujetFormulaire.hidden = false;
       etudeMatiereV2.focus();
     });
@@ -786,11 +847,12 @@ document.querySelectorAll(".onglet-ressource").forEach((onglet) => {
     document.querySelectorAll(".onglet-ressource").forEach((o) => o.classList.remove("actif"));
     onglet.classList.add("actif");
     ongletRessourceActif = onglet.dataset.onglet;
-    ["videos", "exercices", "fiches", "maitrise", "epreuve", "planning"].forEach((id) => {
+    ["videos", "exercices", "fiches", "maitrise", "epreuve", "planning", "devoirs"].forEach((id) => {
       document.getElementById(`panneau-${id}`).hidden = ongletRessourceActif !== id;
     });
     if (ongletRessourceActif === "fiches") chargerFichesAReviser();
     if (ongletRessourceActif === "maitrise") chargerMaitrise();
+    if (ongletRessourceActif === "devoirs") chargerDevoirsEleve();
   });
 });
 
@@ -3880,12 +3942,26 @@ async function chargerMonProfil() {
     const resProfil = await fetchAuthentifie("/api/profil");
     const profil = resProfil.ok ? await resProfil.json() : { points: 0, serie_actuelle: 0 };
 
+    let rappelFiches = 0;
+    try {
+      const resFiches = await fetchAuthentifie("/api/fiches/a-reviser?matiere=&classe=");
+      if (resFiches.ok) rappelFiches = (await resFiches.json()).length;
+    } catch { /* pas grave si indisponible */ }
+
     conteneurStats.innerHTML = `
       <div class="profil-stat-carte"><div class="profil-stat-icone">🔥</div><div class="profil-stat-valeur">${profil.serie_actuelle || 0}</div><div class="profil-stat-label">jours de suite</div></div>
       <div class="profil-stat-carte"><div class="profil-stat-icone">⭐</div><div class="profil-stat-valeur">${profil.points || 0}</div><div class="profil-stat-label">points</div></div>
       <div class="profil-stat-carte"><div class="profil-stat-icone">📚</div><div class="profil-stat-valeur">${data.stats.seances}</div><div class="profil-stat-label">séances</div></div>
       <div class="profil-stat-carte"><div class="profil-stat-icone">🎯</div><div class="profil-stat-valeur">${data.stats.score_moyen !== null ? data.stats.score_moyen + "%" : "—"}</div><div class="profil-stat-label">score moyen quiz</div></div>
     `;
+    if (rappelFiches > 0) {
+      conteneurStats.innerHTML += `<div class="rappel-fiches">🔔 ${rappelFiches} fiche${rappelFiches > 1 ? "s" : ""} à réviser aujourd'hui — va dans Étudier avec moi → une classe → onglet 📇 Fiches</div>`;
+    }
+
+    chargerBadges();
+    chargerClassement();
+    document.getElementById("btn-telecharger-historique-pdf").onclick = telechargerHistoriquePDF;
+    document.getElementById("btn-telecharger-historique-csv").onclick = telechargerHistoriqueCSV;
 
     const matieres = Object.entries(data.stats.matieres).sort((a, b) => b[1] - a[1]);
     const maxCompte = matieres.length ? matieres[0][1] : 1;
@@ -3918,6 +3994,344 @@ async function chargerMonProfil() {
     conteneurStats.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
   }
 }
+
+async function chargerBadges() {
+  const grille = document.getElementById("grille-badges");
+  try {
+    const res = await fetchAuthentifie("/api/profil/badges");
+    const badges = await res.json();
+    grille.innerHTML = badges.map((b) => `
+      <div class="carte-badge ${b.obtenu ? "obtenu" : "verrouille"}" title="${echapperHtml(b.desc)}">
+        <span class="badge-icone">${b.obtenu ? b.icone : "🔒"}</span>
+        <span class="badge-titre">${echapperHtml(b.titre)}</span>
+      </div>`).join("");
+  } catch {
+    grille.innerHTML = `<p class="chargement-guide">Badges indisponibles pour l'instant.</p>`;
+  }
+}
+
+async function chargerClassement() {
+  const resultat = document.getElementById("classement-resultat");
+  const classeInput = document.getElementById("classement-classe-input");
+  const toggle = document.getElementById("classement-visible-toggle");
+
+  document.getElementById("btn-enregistrer-classement").onclick = async () => {
+    const classe = classeInput.value.trim();
+    if (!classe) { alert("Indique ta classe."); return; }
+    try {
+      await fetchAuthentifie("/api/profil/classement-parametres", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ classe, visible: toggle.checked }),
+      });
+      afficherClassement(classe);
+    } catch { /* silencieux */ }
+  };
+
+  const classeSauvee = classeInput.value.trim();
+  if (classeSauvee) afficherClassement(classeSauvee);
+}
+
+async function afficherClassement(classe) {
+  const resultat = document.getElementById("classement-resultat");
+  resultat.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+  try {
+    const res = await fetchAuthentifie(`/api/classement?classe=${encodeURIComponent(classe)}`);
+    const data = await res.json();
+    if (!data.classement.length) {
+      resultat.innerHTML = `<p class="chargement-guide">Personne d'autre n'a encore rejoint le classement pour "${echapperHtml(classe)}".</p>`;
+      return;
+    }
+    resultat.innerHTML = `<div class="liste-ressources">${data.classement.map((c) => `
+      <div class="carte-ressource ${c.toi ? "classement-toi" : ""}">
+        <div class="carte-ressource-titre">#${c.rang} ${c.toi ? "— Toi" : ""}</div>
+        <div>⭐ ${c.points} pts · 🔥 ${c.serie}j</div>
+      </div>`).join("")}</div>`;
+  } catch {
+    resultat.innerHTML = "";
+  }
+}
+
+// ---------- Calendrier scolaire (dates officielles confirmées) ----------
+const DATES_CALENDRIER_BF = [
+  { date: "8 septembre 2025", titre: "Rentrée des classes", desc: "Année scolaire 2025-2026" },
+  { date: "15 juin — 15 juillet 2026", titre: "Mois Artistique et Culturel (MAC)", desc: "Activités culturelles et sportives scolaires" },
+  { date: "15 juillet 2026", titre: "Fin officielle des cours", desc: "Arrêté conjoint du 13 mars 2026" },
+];
+
+// ---------- Recherche globale (concours + documents bibliothèque) ----------
+const rechercheGlobaleInput = document.getElementById("recherche-globale-input");
+const rechercheGlobaleResultats = document.getElementById("recherche-globale-resultats");
+let delaiRechercheGlobale = null;
+
+rechercheGlobaleInput.addEventListener("input", () => {
+  clearTimeout(delaiRechercheGlobale);
+  const terme = rechercheGlobaleInput.value.trim().toLowerCase();
+  if (terme.length < 2) { rechercheGlobaleResultats.hidden = true; return; }
+  delaiRechercheGlobale = setTimeout(() => lancerRechercheGlobale(terme), 300);
+});
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".recherche-globale")) rechercheGlobaleResultats.hidden = true;
+});
+
+async function lancerRechercheGlobale(terme) {
+  const resultats = [];
+
+  LISTE_CONCOURS.filter((c) => c.nom.toLowerCase().includes(terme) || c.organisme.toLowerCase().includes(terme))
+    .slice(0, 5)
+    .forEach((c) => resultats.push({ type: "Concours", label: `${c.nom} — ${c.organisme}`, action: () => { document.querySelector('[data-mode="concours"]').click(); setTimeout(() => ouvrirPageConcours(c.nom), 200); } }));
+
+  try {
+    const res = await fetch(`/api/bibliotheque/documents?categorie=Tous`);
+    const docs = await res.json();
+    docs.filter((d) => d.nom.toLowerCase().includes(terme)).slice(0, 5)
+      .forEach((d) => resultats.push({ type: "Document", label: d.nom, action: () => window.open(d.url_fichier, "_blank") }));
+  } catch { /* pas grave si indisponible */ }
+
+  rechercheGlobaleResultats.hidden = false;
+  rechercheGlobaleResultats.innerHTML = resultats.length
+    ? resultats.map((r, i) => `<button type="button" class="recherche-resultat-item" data-i="${i}"><span class="recherche-resultat-type">${r.type}</span>${echapperHtml(r.label)}</button>`).join("")
+    : `<div class="recherche-resultat-item">Aucun résultat.</div>`;
+  rechercheGlobaleResultats.querySelectorAll(".recherche-resultat-item[data-i]").forEach((bouton) => {
+    bouton.addEventListener("click", () => { resultats[Number(bouton.dataset.i)].action(); rechercheGlobaleResultats.hidden = true; rechercheGlobaleInput.value = ""; });
+  });
+}
+
+// ---------- Accessibilité (persistée) ----------
+function appliquerParametresAccessibilite() {
+  const taille = localStorage.getItem("inous_taille_texte") || "normal";
+  document.body.classList.remove("taille-grand", "taille-tres-grand");
+  if (taille !== "normal") document.body.classList.add(`taille-${taille}`);
+  document.querySelectorAll(".access-btn").forEach((b) => b.classList.toggle("actif", b.dataset.taille === taille));
+
+  document.body.classList.toggle("contraste-renforce", localStorage.getItem("inous_contraste") === "1");
+  document.getElementById("toggle-contraste").checked = localStorage.getItem("inous_contraste") === "1";
+  document.body.classList.toggle("police-lisible", localStorage.getItem("inous_police_lisible") === "1");
+  document.getElementById("toggle-police-lisible").checked = localStorage.getItem("inous_police_lisible") === "1";
+}
+
+document.querySelectorAll(".access-btn").forEach((bouton) => {
+  bouton.addEventListener("click", () => {
+    localStorage.setItem("inous_taille_texte", bouton.dataset.taille);
+    appliquerParametresAccessibilite();
+  });
+});
+document.getElementById("toggle-contraste").addEventListener("change", (e) => {
+  localStorage.setItem("inous_contraste", e.target.checked ? "1" : "0");
+  appliquerParametresAccessibilite();
+});
+document.getElementById("toggle-police-lisible").addEventListener("change", (e) => {
+  localStorage.setItem("inous_police_lisible", e.target.checked ? "1" : "0");
+  appliquerParametresAccessibilite();
+});
+appliquerParametresAccessibilite();
+
+// ---------- Notifications push réelles ----------
+function base64UrlVersUint8(base64Url) {
+  const padding = "=".repeat((4 - (base64Url.length % 4)) % 4);
+  const base64 = (base64Url + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const brut = atob(base64);
+  return Uint8Array.from([...brut].map((c) => c.charCodeAt(0)));
+}
+
+document.getElementById("btn-activer-notifications").addEventListener("click", async () => {
+  const statut = document.getElementById("notifications-statut");
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    statut.textContent = "⚠️ Non supporté par ce navigateur.";
+    return;
+  }
+  if (!localStorage.getItem("inous_jeton")) {
+    statut.textContent = "⚠️ Connecte-toi d'abord.";
+    return;
+  }
+  statut.textContent = "Activation…";
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") { statut.textContent = "⚠️ Permission refusée."; return; }
+
+    const resCle = await fetch("/api/notifications/cle-publique");
+    const { cle_publique } = await resCle.json();
+    if (!cle_publique) { statut.textContent = "⚠️ Notifications non configurées côté serveur."; return; }
+
+    const enregistrement = await navigator.serviceWorker.ready;
+    const abonnement = await enregistrement.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: base64UrlVersUint8(cle_publique),
+    });
+
+    await fetchAuthentifie("/api/notifications/abonnement", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ abonnement: abonnement.toJSON() }),
+    });
+    statut.textContent = "✅ Rappels activés !";
+  } catch (erreur) {
+    statut.textContent = "⚠️ " + erreur.message;
+  }
+});
+
+// ---------- Devoirs (élève : liste par classe) ----------
+async function chargerDevoirsEleve() {
+  const liste = document.getElementById("liste-devoirs-eleve");
+  const classe = classeChoisie || etudeNiveauChoisi;
+  if (!classe) { liste.innerHTML = `<p class="chargement-guide">Choisis d'abord ta classe.</p>`; return; }
+  liste.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+  try {
+    const res = await fetchAuthentifie(`/api/devoirs/classe?classe=${encodeURIComponent(classe)}`);
+    const devoirs = await res.json();
+    liste.innerHTML = devoirs.length
+      ? devoirs.map((d) => `
+          <div class="carte-ressource">
+            <div>
+              <div class="carte-ressource-titre">${d.fait ? "✅" : "⬜"} ${echapperHtml(d.matiere)} — ${echapperHtml(d.question)}</div>
+              <div class="carte-ressource-meta">À rendre avant le ${d.date_limite}</div>
+            </div>
+            ${!d.fait ? `<button type="button" class="bouton-etape-nav" data-id="${d.id}">Faire</button>` : ""}
+          </div>`).join("")
+      : `<p class="chargement-guide">Aucun devoir assigné pour cette classe.</p>`;
+
+    liste.querySelectorAll("[data-id]").forEach((bouton) => {
+      bouton.addEventListener("click", () => faireDevoir(devoirs.find((d) => d.id === bouton.dataset.id), liste));
+    });
+  } catch (erreur) {
+    liste.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
+  }
+}
+
+function faireDevoir(devoir, liste) {
+  liste.innerHTML = `
+    <div class="jeu-question">${echapperHtml(devoir.question)}</div>
+    <div class="jeu-choix">${devoir.choix.map((c, i) => `<button type="button" class="bouton-choix" data-index="${i}">${echapperHtml(c)}</button>`).join("")}</div>
+  `;
+  liste.querySelectorAll(".bouton-choix").forEach((bouton) => {
+    bouton.addEventListener("click", async () => {
+      const choisi = Number(bouton.dataset.index);
+      const correct = choisi === Number(devoir.reponse_index);
+      liste.querySelectorAll(".bouton-choix").forEach((b) => (b.disabled = true));
+      bouton.classList.add(correct ? "bonne-reponse" : "mauvaise-reponse");
+      await fetchAuthentifie(`/api/devoirs/${devoir.id}/fait`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ score: correct ? 1 : 0, total: 1 }),
+      });
+      enregistrerActivite("quiz", devoir.matiere, "Devoir", correct ? 1 : 0, 1, devoir.classe);
+      setTimeout(() => chargerDevoirsEleve(), 1200);
+    });
+  });
+}
+
+// ---------- Export PDF / téléchargement historique ----------
+function telechargerPDF(titre, texte) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(14);
+  doc.text(titre, 10, 15);
+  doc.setFontSize(11);
+  doc.text(doc.splitTextToSize(texte, 190), 10, 25);
+  doc.save(`${titre.replace(/[^a-z0-9]/gi, "_")}.pdf`);
+}
+
+async function telechargerHistoriquePDF() {
+  const res = await fetchAuthentifie("/api/profil/historique");
+  const data = await res.json();
+  const texte = data.historique.map((h) =>
+    `${h.date_activite?.slice(0, 10)} — ${h.matiere || ""} ${h.sujet ? "— " + h.sujet : ""} (${h.type_activite})${h.total ? ` : ${h.score}/${h.total}` : ""}`
+  ).join("\n");
+  telechargerPDF("Mon historique INOUS.AI", texte || "Aucune activité enregistrée.");
+}
+
+function telechargerHistoriqueCSV() {
+  fetchAuthentifie("/api/profil/historique").then((res) => res.json()).then((data) => {
+    const lignes = ["Date,Matiere,Sujet,Type,Score,Total"];
+    data.historique.forEach((h) => {
+      lignes.push([h.date_activite?.slice(0, 10), h.matiere || "", h.sujet || "", h.type_activite, h.score ?? "", h.total ?? ""].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","));
+    });
+    const blob = new Blob([lignes.join("\n")], { type: "text/csv" });
+    const lien = document.createElement("a");
+    lien.href = URL.createObjectURL(blob);
+    lien.download = "historique_inous_ai.csv";
+    lien.click();
+  });
+}
+
+function chargerCalendrier() {
+  document.getElementById("liste-calendrier").innerHTML = DATES_CALENDRIER_BF.map((d) => `
+    <div class="carte-ressource">
+      <div>
+        <div class="carte-ressource-titre">📅 ${echapperHtml(d.date)}</div>
+        <div class="carte-ressource-meta">${echapperHtml(d.titre)} — ${echapperHtml(d.desc)}</div>
+      </div>
+    </div>`).join("");
+}
+
+// ---------- Espace enseignant (statistiques réelles de ses propres ressources) ----------
+async function chargerEspaceEnseignant() {
+  const jeton = localStorage.getItem("inous_jeton");
+  document.getElementById("enseignant-non-connecte").hidden = !!jeton;
+  document.getElementById("enseignant-connecte").hidden = !jeton;
+  if (!jeton) return;
+
+  const stats = document.getElementById("enseignant-stats");
+  stats.innerHTML = `<p class="chargement-guide">${texteTraduit("reflexion")}</p>`;
+  try {
+    const res = await fetchAuthentifie("/api/enseignant/stats");
+    const data = await res.json();
+    stats.innerHTML = `
+      <div class="profil-stat-carte"><div class="profil-stat-icone">🎥</div><div class="profil-stat-valeur">${data.total_videos}</div><div class="profil-stat-label">vidéos ajoutées</div></div>
+      <div class="profil-stat-carte"><div class="profil-stat-icone">📝</div><div class="profil-stat-valeur">${data.total_exercices}</div><div class="profil-stat-label">exercices ajoutés</div></div>
+    `;
+    document.getElementById("enseignant-par-classe").innerHTML = data.par_classe.length
+      ? data.par_classe.map((c) => `
+          <div class="carte-ressource">
+            <div class="carte-ressource-titre">${echapperHtml(c.classe)}</div>
+            <div>🎥 ${c.videos} · 📝 ${c.exercices}</div>
+          </div>`).join("")
+      : `<p class="chargement-guide">Aucune ressource ajoutée pour l'instant.</p>`;
+  } catch (erreur) {
+    stats.innerHTML = `<p>⚠️ ${echapperHtml(erreur.message)}</p>`;
+  }
+  chargerDevoirsAssignes();
+}
+
+async function chargerDevoirsAssignes() {
+  const liste = document.getElementById("liste-devoirs-assignes");
+  try {
+    const res = await fetchAuthentifie("/api/devoirs/assignes");
+    const devoirs = await res.json();
+    liste.innerHTML = devoirs.length
+      ? devoirs.map((d) => `<div class="carte-ressource"><div class="carte-ressource-titre">${echapperHtml(d.matiere)} (${echapperHtml(d.classe)}) — ${echapperHtml(d.question)}</div><div class="carte-ressource-meta">Échéance : ${d.date_limite}</div></div>`).join("")
+      : `<p class="chargement-guide">Aucun devoir assigné pour l'instant.</p>`;
+  } catch { /* silencieux */ }
+}
+
+document.getElementById("btn-assigner-devoir").addEventListener("click", async () => {
+  const matiere = document.getElementById("devoir-matiere").value.trim();
+  const classe = document.getElementById("devoir-classe").value.trim();
+  const dateLimite = document.getElementById("devoir-date-limite").value;
+  const question = document.getElementById("devoir-question").value.trim();
+  const choix = [0, 1, 2, 3].map((i) => document.getElementById(`devoir-choix-${i}`).value.trim());
+  const reponseIndex = Number(document.querySelector('input[name="devoir-bonne-reponse"]:checked').value);
+  const statut = document.getElementById("statut-devoir");
+
+  if (!matiere || !classe || !dateLimite || !question || choix.some((c) => !c)) {
+    alert("Remplis tous les champs avant d'assigner le devoir.");
+    return;
+  }
+  statut.textContent = "Envoi en cours…";
+  try {
+    const res = await fetchAuthentifie("/api/devoirs", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matiere, classe, question, choix, reponse_index: reponseIndex, explication: "", date_limite: dateLimite }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || texteTraduit("erreurInconnue"));
+    statut.textContent = "✅ Devoir assigné !";
+    document.getElementById("devoir-question").value = "";
+    choix.forEach((_, i) => (document.getElementById(`devoir-choix-${i}`).value = ""));
+    chargerDevoirsAssignes();
+  } catch (erreur) {
+    statut.textContent = "⚠️ " + erreur.message;
+  }
+});
+
 
 // ============================================================
 // COMPTE UTILISATEUR (connexion / inscription réelles via Supabase)

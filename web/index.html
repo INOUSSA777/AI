@@ -27,6 +27,11 @@
     </div>
     <p class="sous-titre" data-i18n="sousTitre">L'intelligence artificielle pour améliorer ton apprentissage</p>
 
+    <div class="recherche-globale">
+      <input type="text" id="recherche-globale-input" placeholder="🔍 Rechercher un cours, un concours, un document…">
+      <div class="recherche-globale-resultats" id="recherche-globale-resultats" hidden></div>
+    </div>
+
     <nav class="modes">
       <button class="mode-btn actif" data-mode="chat">
         <span class="mode-num">01</span> 🤖 <span data-i18n="modeChat">Assistant IA</span>
@@ -42,6 +47,12 @@
       </button>
       <button class="mode-btn" data-mode="profil">
         <span class="mode-num">05</span> 👤 <span data-i18n="modeProfil">Mon profil</span>
+      </button>
+      <button class="mode-btn" data-mode="calendrier">
+        <span class="mode-num">06</span> 📅 Calendrier
+      </button>
+      <button class="mode-btn" data-mode="enseignant">
+        <span class="mode-num">07</span> 🏫 Espace enseignant
       </button>
     </nav>
 
@@ -80,6 +91,26 @@
           <option value="en">English</option>
           <option value="moore">Mooré</option>
         </select>
+      </div>
+
+      <div class="bloc-accessibilite">
+        <label>♿ Accessibilité</label>
+        <div class="access-ligne">
+          <span>Taille du texte</span>
+          <div class="access-boutons">
+            <button type="button" class="access-btn" data-taille="normal">A</button>
+            <button type="button" class="access-btn" data-taille="grand">A+</button>
+            <button type="button" class="access-btn" data-taille="tres-grand">A++</button>
+          </div>
+        </div>
+        <label class="case-bonne-reponse"><input type="checkbox" id="toggle-contraste"> Contraste renforcé</label>
+        <label class="case-bonne-reponse"><input type="checkbox" id="toggle-police-lisible"> Police plus lisible (dyslexie)</label>
+      </div>
+
+      <div class="bloc-notifications">
+        <label>🔔 Notifications</label>
+        <button type="button" id="btn-activer-notifications" class="bouton-compte bouton-hors-ligne">Activer les rappels de révision</button>
+        <p class="hors-ligne-statut" id="notifications-statut"></p>
       </div>
 
       <button id="btn-effacer" class="bouton-fantome" data-i18n="btnEffacer">Effacer la session</button>
@@ -154,9 +185,15 @@
 
       <div class="etude-etape-technique" id="etude-etape-technique" hidden>
         <button type="button" class="bouton-etape-nav" id="btn-retour-niveau-etude">← Changer de niveau</button>
-        <h2 id="etude-niveau-choisi-titre"></h2>
-        <p class="guide-desc">Choisis une technique d'apprentissage</p>
-        <div class="grille-techniques" id="grille-techniques"></div>
+
+        <div id="etude-bloc-choix-technique">
+          <h2 id="etude-niveau-choisi-titre"></h2>
+          <p class="guide-desc">Choisis une technique d'apprentissage</p>
+          <div class="grille-techniques" id="grille-techniques"></div>
+        </div>
+
+        <button type="button" class="bouton-etape-nav" id="btn-retour-vers-techniques" hidden>← Changer de technique</button>
+        <h2 id="etude-outil-titre" hidden></h2>
 
         <div class="etude-sujet-formulaire" id="etude-sujet-formulaire" hidden>
           <div class="etude-champ">
@@ -192,6 +229,7 @@
             <button type="button" class="onglet-ressource" data-onglet="maitrise">📊 Maîtrise</button>
             <button type="button" class="onglet-ressource" data-onglet="epreuve">⏱️ Épreuve</button>
             <button type="button" class="onglet-ressource" data-onglet="planning">📅 Planning</button>
+            <button type="button" class="onglet-ressource" data-onglet="devoirs">📚 Devoirs</button>
           </div>
 
           <div id="panneau-videos">
@@ -278,6 +316,11 @@
             </div>
             <button type="button" class="bouton-envoyer" id="btn-generer-planning">🤖 Générer mon planning</button>
             <div id="planning-resultat"></div>
+          </div>
+
+          <div id="panneau-devoirs" hidden>
+            <p class="guide-desc">Devoirs assignés par ton enseignant pour cette classe.</p>
+            <div id="liste-devoirs-eleve" class="liste-ressources"></div>
           </div>
         </div>
       </div>
@@ -461,11 +504,72 @@
 
         <div class="profil-stats" id="profil-stats"></div>
 
+        <div class="profil-section-titre">🏆 BADGES</div>
+        <div class="grille-badges" id="grille-badges"></div>
+
+        <div class="profil-section-titre">🤝 CLASSEMENT ENTRE CAMARADES <span style="font-weight:400;color:var(--muet);">(optionnel)</span></div>
+        <div class="classement-parametres">
+          <input type="text" id="classement-classe-input" placeholder="Ta classe (ex : 4e, Terminale D…)">
+          <label class="case-bonne-reponse"><input type="checkbox" id="classement-visible-toggle"> Apparaître dans le classement de ma classe</label>
+          <button type="button" class="bouton-envoyer" id="btn-enregistrer-classement">Enregistrer</button>
+        </div>
+        <div id="classement-resultat"></div>
+
+        <div class="profil-section-titre">💾 TÉLÉCHARGER MON HISTORIQUE</div>
+        <div style="display:flex;gap:10px;margin-bottom:20px;">
+          <button type="button" class="bouton-etape-nav" id="btn-telecharger-historique-pdf">📄 PDF</button>
+          <button type="button" class="bouton-etape-nav" id="btn-telecharger-historique-csv">📊 CSV</button>
+        </div>
+
         <div class="profil-section-titre">MATIÈRES ÉTUDIÉES</div>
         <div id="profil-matieres" class="profil-matieres"></div>
 
         <div class="profil-section-titre">HISTORIQUE RÉCENT</div>
         <div id="profil-historique" class="profil-historique"></div>
+      </div>
+    </div>
+
+    <!-- ===== Mode Calendrier scolaire (dates officielles confirmées uniquement) ===== -->
+    <div class="ecran-dedie ecran-calendrier" id="ecran-calendrier" hidden>
+      <h2>📅 Calendrier scolaire — Burkina Faso</h2>
+      <p class="guide-desc">Uniquement des dates officielles confirmées — rien n'est deviné par l'IA.</p>
+      <div id="liste-calendrier" class="liste-ressources"></div>
+      <p class="note-avertissement">ℹ️ Source : Ministère de l'Enseignement de Base (education.gov.bf). Certaines dates de vacances intermédiaires n'ont pas pu être confirmées avec certitude et ne sont donc pas affichées — vérifie auprès de ton établissement.</p>
+    </div>
+
+    <!-- ===== Mode Espace enseignant : statistiques réelles de ses propres ressources ===== -->
+    <div class="ecran-dedie ecran-enseignant" id="ecran-enseignant" hidden>
+      <div id="enseignant-non-connecte">
+        <h2>🏫 Espace enseignant</h2>
+        <p class="guide-desc">Connecte-toi pour voir les statistiques réelles des vidéos et exercices que tu as ajoutés.</p>
+      </div>
+      <div id="enseignant-connecte" hidden>
+        <h2>🏫 Espace enseignant</h2>
+        <p class="guide-desc">Uniquement les ressources que TU as personnellement ajoutées.</p>
+        <div class="profil-stats" id="enseignant-stats"></div>
+        <div class="profil-section-titre">PAR CLASSE</div>
+        <div id="enseignant-par-classe" class="liste-ressources"></div>
+
+        <div class="profil-section-titre">📚 ASSIGNER UN DEVOIR</div>
+        <div class="formulaire-ressource" style="max-width:480px;">
+          <input type="text" id="devoir-matiere" placeholder="Matière">
+          <input type="text" id="devoir-classe" placeholder="Classe (ex : 4e, Terminale D)">
+          <input type="date" id="devoir-date-limite">
+          <input type="text" id="devoir-question" placeholder="Énoncé de la question">
+          <input type="text" id="devoir-choix-0" placeholder="Choix 1 (bonne réponse) →">
+          <label class="case-bonne-reponse"><input type="radio" name="devoir-bonne-reponse" value="0" checked> bonne réponse</label>
+          <input type="text" id="devoir-choix-1" placeholder="Choix 2 →">
+          <label class="case-bonne-reponse"><input type="radio" name="devoir-bonne-reponse" value="1"> bonne réponse</label>
+          <input type="text" id="devoir-choix-2" placeholder="Choix 3 →">
+          <label class="case-bonne-reponse"><input type="radio" name="devoir-bonne-reponse" value="2"> bonne réponse</label>
+          <input type="text" id="devoir-choix-3" placeholder="Choix 4 →">
+          <label class="case-bonne-reponse"><input type="radio" name="devoir-bonne-reponse" value="3"> bonne réponse</label>
+          <button type="button" class="bouton-envoyer" id="btn-assigner-devoir">Assigner à la classe</button>
+          <p class="statut-envoi-lot" id="statut-devoir"></p>
+        </div>
+
+        <div class="profil-section-titre">Devoirs déjà assignés</div>
+        <div id="liste-devoirs-assignes" class="liste-ressources"></div>
       </div>
     </div>
 

@@ -71,3 +71,32 @@ def lister_exercices(matiere: str | None, classe: str | None) -> list[dict]:
     if classe:
         requete = requete.eq("classe", classe)
     return requete.execute().data
+
+
+def obtenir_stats_enseignant(id_utilisateur: str) -> dict:
+    """
+    Statistiques réelles des ressources qu'un enseignant a lui-même ajoutées
+    (vidéos + exercices) — jamais de chiffre agrégé sur toute la plateforme,
+    uniquement ce que CET utilisateur a personnellement créé.
+    """
+    client = auth_service.obtenir_client()
+    videos = client.table("videos_matiere").select("*").eq("uploaded_by", id_utilisateur).execute().data
+    exercices = client.table("exercices_personnalises").select("*").eq("cree_par", id_utilisateur).execute().data
+
+    par_classe: dict[str, dict] = {}
+    for v in videos:
+        cle = v.get("classe") or "Non précisé"
+        par_classe.setdefault(cle, {"videos": 0, "exercices": 0})
+        par_classe[cle]["videos"] += 1
+    for e in exercices:
+        cle = e.get("classe") or "Non précisé"
+        par_classe.setdefault(cle, {"videos": 0, "exercices": 0})
+        par_classe[cle]["exercices"] += 1
+
+    return {
+        "total_videos": len(videos),
+        "total_exercices": len(exercices),
+        "par_classe": [{"classe": c, **v} for c, v in par_classe.items()],
+        "dernieres_videos": sorted(videos, key=lambda v: v.get("date_creation") or "", reverse=True)[:5],
+        "derniers_exercices": sorted(exercices, key=lambda e: e.get("date_creation") or "", reverse=True)[:5],
+    }
