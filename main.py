@@ -653,4 +653,15 @@ def retirer_document(id_document: str, authorization: str = ""):
 
 # Sert l'interface (index.html, style.css, script.js) située dans web/
 CHEMIN_WEB = os.path.join(os.path.dirname(__file__), "web")
+
+
+# Vérification Play Store (Trusted Web Activity) : le dossier .well-known étant
+# masqué, on le sert via une route explicite AVANT le montage statique fourre-tout.
+@app.get("/.well-known/assetlinks.json")
+def assetlinks():
+    from fastapi.responses import FileResponse
+    chemin = os.path.join(CHEMIN_WEB, ".well-known", "assetlinks.json")
+    return FileResponse(chemin, media_type="application/json")
+
+
 app.mount("/", StaticFiles(directory=CHEMIN_WEB, html=True), name="web")

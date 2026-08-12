@@ -2,8 +2,16 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>INOUS.AI — Assistant éducatif</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#16241d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="INOUS.AI">
+<link rel="apple-touch-icon" href="/icones/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icones/icone-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
@@ -227,7 +235,6 @@
             <button type="button" class="onglet-ressource" data-onglet="exercices">📝 Exercices</button>
             <button type="button" class="onglet-ressource" data-onglet="fiches">📇 Fiches</button>
             <button type="button" class="onglet-ressource" data-onglet="maitrise">📊 Maîtrise</button>
-            <button type="button" class="onglet-ressource" data-onglet="epreuve">⏱️ Épreuve</button>
             <button type="button" class="onglet-ressource" data-onglet="planning">📅 Planning</button>
             <button type="button" class="onglet-ressource" data-onglet="devoirs">📚 Devoirs</button>
           </div>
@@ -286,22 +293,6 @@
           <div id="panneau-maitrise" hidden>
             <p class="guide-desc">Basé sur tes vrais résultats aux quiz et exercices — un sujet jamais testé apparaît "non testé", pas noté au hasard.</p>
             <div id="liste-maitrise" class="liste-ressources"></div>
-          </div>
-
-          <!-- Épreuve blanche chronométrée -->
-          <div id="panneau-epreuve" hidden>
-            <div id="epreuve-config">
-              <div class="etude-champ" style="max-width:320px;">
-                <label>Durée de l'épreuve</label>
-                <select id="epreuve-duree">
-                  <option value="5">5 minutes</option>
-                  <option value="10" selected>10 minutes</option>
-                  <option value="20">20 minutes</option>
-                </select>
-              </div>
-              <button type="button" class="bouton-envoyer bouton-guide" id="btn-lancer-epreuve">▶ Lancer l'épreuve blanche</button>
-            </div>
-            <div id="epreuve-zone" hidden></div>
           </div>
 
           <!-- Planning de révision -->

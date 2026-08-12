@@ -579,7 +579,6 @@ const TECHNIQUES_ETUDE = [
   { id: "exercices", icone: "📝", titre: "Exercices pratiques", desc: "Applique ce que tu apprends avec des exercices corrigés.", disponible: true },
   { id: "quiz", icone: "🎯", titre: "Quiz et auto-évaluation", desc: "Teste tes connaissances et suis ta progression.", disponible: true },
   { id: "fiches", icone: "📇", titre: "Fiches de révision", desc: "Révise avec des flashcards à répétition espacée.", disponible: true, outilDirect: "fiches" },
-  { id: "epreuve", icone: "⏱️", titre: "Épreuve blanche", desc: "Un vrai contrôle chronométré, avec correction.", disponible: true, outilDirect: "epreuve" },
   { id: "memorisation", icone: "🧭", titre: "Techniques de mémorisation", desc: "Des astuces concrètes pour retenir à long terme.", disponible: true, outilDirect: "fiches" },
   { id: "devoirs", icone: "📚", titre: "Mes devoirs", desc: "Les devoirs assignés par ton enseignant pour cette classe.", disponible: true, outilDirect: "devoirs" },
   { id: "maitrise", icone: "📊", titre: "Ma maîtrise", desc: "Vois quels chapitres tu maîtrises déjà, ou pas encore.", disponible: true, outilDirect: "maitrise" },
@@ -781,7 +780,7 @@ function rendreGrilleTechniques() {
 
         document.querySelectorAll(".onglet-ressource").forEach((o) => o.classList.toggle("actif", o.dataset.onglet === config.outilDirect));
         ongletRessourceActif = config.outilDirect;
-        ["videos", "exercices", "fiches", "maitrise", "epreuve", "planning", "devoirs"].forEach((id) => {
+        ["videos", "exercices", "fiches", "maitrise", "planning", "devoirs"].forEach((id) => {
           document.getElementById(`panneau-${id}`).hidden = ongletRessourceActif !== id;
         });
         if (ongletRessourceActif === "fiches") chargerFichesAReviser();
@@ -847,7 +846,7 @@ document.querySelectorAll(".onglet-ressource").forEach((onglet) => {
     document.querySelectorAll(".onglet-ressource").forEach((o) => o.classList.remove("actif"));
     onglet.classList.add("actif");
     ongletRessourceActif = onglet.dataset.onglet;
-    ["videos", "exercices", "fiches", "maitrise", "epreuve", "planning", "devoirs"].forEach((id) => {
+    ["videos", "exercices", "fiches", "maitrise", "planning", "devoirs"].forEach((id) => {
       document.getElementById(`panneau-${id}`).hidden = ongletRessourceActif !== id;
     });
     if (ongletRessourceActif === "fiches") chargerFichesAReviser();
@@ -1056,88 +1055,6 @@ async function chargerMaitrise() {
   } catch {
     liste.innerHTML = `<p class="chargement-guide">Connecte-toi pour voir ta maîtrise.</p>`;
   }
-}
-
-// ---------- Épreuve blanche chronométrée ----------
-let minuteurEpreuve = null;
-
-document.getElementById("btn-lancer-epreuve").addEventListener("click", async () => {
-  const { classe, matiere } = classeEtMatiereRessource();
-  if (!matiere) { alert("Indique une matière avant de lancer l'épreuve."); return; }
-  const dureeMinutes = Number(document.getElementById("epreuve-duree").value);
-  const zone = document.getElementById("epreuve-zone");
-  document.getElementById("epreuve-config").hidden = true;
-  zone.hidden = false;
-  zone.innerHTML = `<p class="chargement-guide">${texteTraduit("jeuxPreparation")}</p>`;
-
-  const contextePdfEpreuve = etudePdfTexte
-    ? `Base-toi PRINCIPALEMENT sur ce cours réel fourni par l'élève : \n"""${etudePdfTexte.slice(0, 6000)}"""\n\n`
-    : "";
-  const prompt = contextePdfEpreuve + `Génère exactement 6 questions à choix multiples de niveau examen sur la matière "${matiere}" (${classe}). ` +
-    `Réponds UNIQUEMENT avec un tableau JSON valide : [{"question": "...", "choix": ["...","...","...","..."], "reponse": 0}]`;
-
-  try {
-    const questions = await demanderTableauJSON(prompt, selecteurLangue.value);
-    let secondesRestantes = dureeMinutes * 60;
-    let index = 0, score = 0;
-
-    minuteurEpreuve = setInterval(() => {
-      secondesRestantes--;
-      const min = Math.floor(secondesRestantes / 60), sec = secondesRestantes % 60;
-      const affichage = document.getElementById("epreuve-minuteur-texte");
-      if (affichage) {
-        affichage.textContent = `⏱️ ${min}:${sec.toString().padStart(2, "0")}`;
-        affichage.parentElement.classList.toggle("epreuve-urgence", secondesRestantes <= 60);
-      }
-      if (secondesRestantes <= 0) { clearInterval(minuteurEpreuve); terminerEpreuve(zone, score, questions.length, matiere, classe); }
-    }, 1000);
-
-    const afficherQ = () => {
-      const q = questions[index];
-      zone.innerHTML = `
-        <div class="epreuve-minuteur"><span id="epreuve-minuteur-texte">⏱️ ${dureeMinutes}:00</span></div>
-        <div class="jeu-progression">${index + 1} / ${questions.length}</div>
-        <div class="jeu-question">${echapperHtml(q.question)}</div>
-        <div class="jeu-choix">${q.choix.map((c, i) => `<button type="button" class="bouton-choix" data-index="${i}">${echapperHtml(c)}</button>`).join("")}</div>
-      `;
-      zone.querySelectorAll(".bouton-choix").forEach((bouton) => {
-        bouton.addEventListener("click", () => {
-          const choisi = Number(bouton.dataset.index);
-          zone.querySelectorAll(".bouton-choix").forEach((b) => (b.disabled = true));
-          if (choisi === Number(q.reponse)) { bouton.classList.add("bonne-reponse"); score++; }
-          else {
-            bouton.classList.add("mauvaise-reponse");
-            zone.querySelectorAll(".bouton-choix")[q.reponse].classList.add("bonne-reponse");
-          }
-          const suite = document.createElement("button");
-          suite.type = "button";
-          suite.className = "bouton-envoyer jeu-suivant";
-          suite.textContent = index + 1 < questions.length ? texteTraduit("jeuxSuivant") : texteTraduit("jeuxTermine");
-          suite.addEventListener("click", () => {
-            index++;
-            if (index < questions.length) afficherQ();
-            else { clearInterval(minuteurEpreuve); terminerEpreuve(zone, score, questions.length, matiere, classe); }
-          });
-          zone.appendChild(suite);
-        });
-      });
-    };
-    afficherQ();
-  } catch {
-    zone.innerHTML = `<p>⚠️ ${texteTraduit("jeuxErreur")}</p>`;
-  }
-});
-
-function terminerEpreuve(zone, score, total, matiere, classe) {
-  zone.innerHTML = `
-    <p>🏁 Épreuve terminée : ${score} / ${total}</p>
-    <button type="button" class="bouton-etape-nav" id="btn-refaire-epreuve">↩ Recommencer</button>
-  `;
-  enregistrerActivite("quiz", matiere, "Épreuve blanche", score, total, classe);
-  document.getElementById("btn-refaire-epreuve").addEventListener("click", () => {
-    document.getElementById("epreuve-config").hidden = false;
-    zone.hidden = true;
-  });
 }
 
 // ---------- Planning de révision avant un contrôle ----------
@@ -4127,6 +4044,13 @@ document.getElementById("toggle-police-lisible").addEventListener("change", (e) 
 appliquerParametresAccessibilite();
 
 // ---------- Notifications push réelles ----------
+// ---------- Enregistrement du service worker (PWA installable + push réel) ----------
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((e) => console.warn("SW non enregistré :", e));
+  });
+}
+
 function base64UrlVersUint8(base64Url) {
   const padding = "=".repeat((4 - (base64Url.length % 4)) % 4);
   const base64 = (base64Url + padding).replace(/-/g, "+").replace(/_/g, "/");
