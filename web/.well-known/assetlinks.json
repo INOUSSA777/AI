@@ -1,11 +1,11 @@
-[
+﻿[
   {
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
       "package_name": "com.inousai.app",
       "sha256_cert_fingerprints": [
-        "REMPLACER_PAR_L_EMPREINTE_SHA256_DE_TA_CLE_DE_SIGNATURE"
+        "80:01:12:C4:AA:DF:06:F3:0E:4C:16:DD:B8:22:40:81:A6:17:E6:23:B6:16:65:C1:4C:9C:B7:BE:D4:EF:D5:79"
       ]
     }
   }
