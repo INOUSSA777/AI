@@ -25,7 +25,7 @@ self.addEventListener("fetch", (evenement) => {
 
 // ---------- vraies notifications push ----------
 self.addEventListener("push", (evenement) => {
-  let donnees = { titre: "INOUS.AI", corps: "Tu as une notification." };
+  let donnees = { titre: "INO-Education", corps: "Tu as une notification." };
   try { donnees = evenement.data.json(); } catch { /* garde les valeurs par défaut */ }
 
   evenement.waitUntil(

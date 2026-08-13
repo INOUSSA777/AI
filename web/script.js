@@ -59,7 +59,7 @@ const TRADUCTIONS = {
     statutConnecte: "Connecté",
     statutCleManquante: "Clé API manquante (.env)",
     statutInjoignable: "Backend injoignable",
-    messageAccueil: 'Bonjour, je suis <strong>INOUS.AI</strong>. Choisis un mode à gauche : discute avec moi, lance une séance d\'étude guidée, explore une orientation, ou analyse/génère une image.',
+    messageAccueil: 'Bonjour, je suis <strong>INO-Education</strong>. Choisis un mode à gauche : discute avec moi, lance une séance d\'étude guidée, explore une orientation, ou analyse/génère une image.',
     titreJoindre: "Joindre une image",
     titreParler: "Parler",
     titreParlerImage: "Décrire à la voix",
@@ -67,7 +67,7 @@ const TRADUCTIONS = {
     placeholderImage: "Décris l'image que tu veux générer…",
     btnEnvoyer: "Envoyer",
     btnGenerer: "🎨 Générer",
-    reflexion: "INOUS.AI réfléchit…",
+    reflexion: "INO-Education réfléchit…",
     transcriptionEnCours: "Transcription en cours…",
     generationEnCours: "Génération de l'image en cours…",
     sessionEffacee: "Session effacée. On repart de zéro !",
@@ -83,7 +83,7 @@ const TRADUCTIONS = {
     actionAutrement: "Explique autrement",
     actionExemple: "Exemple burkinabè",
     etudeTitre: "Étudier avec moi",
-    etudeDesc: "Choisis ton niveau et ta matière, décris le sujet — INOUS.AI construit une séance complète : explication, exemple, questions et exercices.",
+    etudeDesc: "Choisis ton niveau et ta matière, décris le sujet — INO-Education construit une séance complète : explication, exemple, questions et exercices.",
     etudeLabelNiveau: "Niveau",
     etudeLabelParcours: "Parcours",
     etudePlanTitre: "Plan de la séance",
@@ -113,7 +113,7 @@ const TRADUCTIONS = {
     etudePlaceholderSujet: "Ex : les fractions, la photosynthèse…",
     etudeBouton: "Commencer la séance",
     orientationTitre: "Orientation",
-    orientationDesc: "Décris ta situation, INOUS.AI te propose un parcours indicatif : filières, compétences, débouchés.",
+    orientationDesc: "Décris ta situation, INO-Education te propose un parcours indicatif : filières, compétences, débouchés.",
     orientationLabelDiplome: "Dernier diplôme obtenu (ou en préparation)",
     diplomeCEP: "CEP",
     diplomeBEPC: "BEPC",
@@ -186,7 +186,7 @@ const TRADUCTIONS = {
     statutConnecte: "Connected",
     statutCleManquante: "Missing API key (.env)",
     statutInjoignable: "Backend unreachable",
-    messageAccueil: 'Hello, I\'m <strong>INOUS.AI</strong>. Pick a mode on the left: chat with me, start a guided study session, explore career guidance, or analyze/generate an image.',
+    messageAccueil: 'Hello, I\'m <strong>INO-Education</strong>. Pick a mode on the left: chat with me, start a guided study session, explore career guidance, or analyze/generate an image.',
     titreJoindre: "Attach an image",
     titreParler: "Speak",
     titreParlerImage: "Describe with your voice",
@@ -194,7 +194,7 @@ const TRADUCTIONS = {
     placeholderImage: "Describe the image you want to generate…",
     btnEnvoyer: "Send",
     btnGenerer: "🎨 Generate",
-    reflexion: "INOUS.AI is thinking…",
+    reflexion: "INO-Education is thinking…",
     transcriptionEnCours: "Transcribing…",
     generationEnCours: "Generating the image…",
     sessionEffacee: "Session cleared. Starting fresh!",
@@ -210,7 +210,7 @@ const TRADUCTIONS = {
     actionAutrement: "Explain differently",
     actionExemple: "Burkinabè example",
     etudeTitre: "Study with me",
-    etudeDesc: "Pick your level and subject, describe the topic — INOUS.AI builds a full session: explanation, example, questions and exercises.",
+    etudeDesc: "Pick your level and subject, describe the topic — INO-Education builds a full session: explanation, example, questions and exercises.",
     etudeLabelNiveau: "Level",
     etudeLabelParcours: "Track",
     niveauPrimaire: "Primary school",
@@ -224,7 +224,7 @@ const TRADUCTIONS = {
     etudePlaceholderSujet: "E.g. fractions, photosynthesis…",
     etudeBouton: "Start the session",
     orientationTitre: "Career guidance",
-    orientationDesc: "Describe your situation, INOUS.AI suggests an indicative path: fields, skills, career prospects.",
+    orientationDesc: "Describe your situation, INO-Education suggests an indicative path: fields, skills, career prospects.",
     orientationLabelDiplome: "Last diploma obtained (or in progress)",
     diplomeCEP: "Primary school certificate",
     diplomeBEPC: "Middle school certificate",
@@ -267,7 +267,7 @@ const TRADUCTIONS = {
     statutConnecte: "Yaa vẽeneg",
     statutCleManquante: "Zĩmb-koɛɛg ka be ye (.env)",
     statutInjoignable: "D ka tõe n paas serveur ye",
-    messageAccueil: 'Ne y windiga, mam yaa <strong>INOUS.AI</strong>. Yãk zãmsg sẽn be goabga: gom ne mam, sɩng zãmsg sõng, bãng sore-tũub, wall ges/naan foto.',
+    messageAccueil: 'Ne y windiga, mam yaa <strong>INO-Education</strong>. Yãk zãmsg sẽn be goabga: gom ne mam, sɩng zãmsg sõng, bãng sore-tũub, wall ges/naan foto.',
     titreJoindre: "Paas foto",
     titreParler: "Gom",
     titreParlerImage: "Wilg ne koɛɛg",
@@ -275,7 +275,7 @@ const TRADUCTIONS = {
     placeholderImage: "Wilg foto ning fo sẽn dat…",
     btnEnvoyer: "Tʋm",
     btnGenerer: "🎨 Naan",
-    reflexion: "INOUS.AI yaa tags…",
+    reflexion: "INO-Education yaa tags…",
     transcriptionEnCours: "D gʋlsda koɛɛg…",
     generationEnCours: "D naanda foto…",
     sessionEffacee: "Gomd-kãngã yiisame. D sɩngame paalem.",
@@ -291,7 +291,7 @@ const TRADUCTIONS = {
     actionAutrement: "Wilg toor toor",
     actionExemple: "Makre Burkina Faso",
     etudeTitre: "Zãms ne mam",
-    etudeDesc: "Yãk f karengã la f zãmsgã, wilg-y sẽn dat n zãms — INOUS.AI na naan zãmsg zãnga.",
+    etudeDesc: "Yãk f karengã la f zãmsgã, wilg-y sẽn dat n zãms — INO-Education na naan zãmsg zãnga.",
     etudeLabelNiveau: "Kareng-zug",
     etudeLabelParcours: "Karen-sore",
     niveauPrimaire: "Piiri (CP tɩ ta CM2)",
@@ -305,7 +305,7 @@ const TRADUCTIONS = {
     etudePlaceholderSujet: "Mak. sik-yaare, foto-tɩgs…",
     etudeBouton: "Sɩng zãmsgã",
     orientationTitre: "Sore-tũub",
-    orientationDesc: "Wilg f zĩig, INOUS.AI na kõ-f sore-tũub sõngo.",
+    orientationDesc: "Wilg f zĩig, INO-Education na kõ-f sore-tũub sõngo.",
     orientationLabelDiplome: "Diplome ning fo sẽn paam (bɩ f sẽn segd n paame)",
     diplomeCEP: "CEP",
     diplomeBEPC: "BEPC",
@@ -2022,7 +2022,7 @@ function telechargerReponsePDF(texteReponseBrut) {
     const blob = new Blob([texteTelechargeableDepuisReponse(texteReponseBrut)], { type: "text/plain;charset=utf-8" });
     const lien = document.createElement("a");
     lien.href = URL.createObjectURL(blob);
-    lien.download = "reponse-inous-ai.txt";
+    lien.download = "reponse-ino-education.txt";
     lien.click();
     return;
   }
@@ -2032,7 +2032,7 @@ function telechargerReponsePDF(texteReponseBrut) {
   const largeurUtile = 180;
 
   doc.setFontSize(16);
-  doc.text("INOUS.AI", 15, 18);
+  doc.text("INO-Education", 15, 18);
   doc.setFontSize(10);
   doc.setTextColor(120);
   doc.text(new Date().toLocaleDateString("fr-FR"), 15, 24);
@@ -2041,7 +2041,7 @@ function telechargerReponsePDF(texteReponseBrut) {
 
   const lignes = doc.splitTextToSize(texte, largeurUtile);
   doc.text(lignes, 15, 36);
-  doc.save("reponse-inous-ai.pdf");
+  doc.save("reponse-ino-education.pdf");
 }
 
 async function envoyerTexte(texte, texteAffiche) {
@@ -4159,7 +4159,7 @@ async function telechargerHistoriquePDF() {
   const texte = data.historique.map((h) =>
     `${h.date_activite?.slice(0, 10)} — ${h.matiere || ""} ${h.sujet ? "— " + h.sujet : ""} (${h.type_activite})${h.total ? ` : ${h.score}/${h.total}` : ""}`
   ).join("\n");
-  telechargerPDF("Mon historique INOUS.AI", texte || "Aucune activité enregistrée.");
+  telechargerPDF("Mon historique INO-Education", texte || "Aucune activité enregistrée.");
 }
 
 function telechargerHistoriqueCSV() {
@@ -4171,7 +4171,7 @@ function telechargerHistoriqueCSV() {
     const blob = new Blob([lignes.join("\n")], { type: "text/csv" });
     const lien = document.createElement("a");
     lien.href = URL.createObjectURL(blob);
-    lien.download = "historique_inous_ai.csv";
+    lien.download = "historique_ino-education.csv";
     lien.click();
   });
 }
@@ -4437,7 +4437,7 @@ async function repondreHorsLigne(question, historiqueRecent) {
   const messages = [
     {
       role: "system",
-      content: "Tu es INOUS.AI, un assistant éducatif. Réponds simplement, clairement et brièvement, en français, sans mise en forme spéciale (pas de JSON, pas de balises).",
+      content: "Tu es INO-Education, un assistant éducatif. Réponds simplement, clairement et brièvement, en français, sans mise en forme spéciale (pas de JSON, pas de balises).",
     },
     ...historiqueRecent.slice(-6), // contexte réduit : petit modèle, mémoire limitée
     { role: "user", content: question },
