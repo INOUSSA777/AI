@@ -2,3 +2,14 @@ venv/
 __pycache__/
 *.pyc
 .env
+
+# Fichiers sensibles / de travail — NE JAMAIS publier
+INO-Education_infos_a_conserver.docx
+INO-Education_fiche_play/
+INOUS - Google Play package/
+INOUS_android_final/
+A-COMPLETER-politique.md
+*.keystore
+signing-key-info.txt
+*.aab
+*.apk
