@@ -583,7 +583,7 @@ const TECHNIQUES_ETUDE = [
   { id: "devoirs", icone: "📚", titre: "Mes devoirs", desc: "Les devoirs assignés par ton enseignant pour cette classe.", disponible: true, outilDirect: "devoirs" },
   { id: "maitrise", icone: "📊", titre: "Ma maîtrise", desc: "Vois quels chapitres tu maîtrises déjà, ou pas encore.", disponible: true, outilDirect: "maitrise" },
   { id: "planning", icone: "📅", titre: "Planning de révision", desc: "Organise tes révisions avant un contrôle.", disponible: true, outilDirect: "planning" },
-  { id: "video", icone: "🎥", titre: "Vidéos pédagogiques", desc: "Apprends en vidéo.", disponible: false },
+  { id: "video", icone: "🎥", titre: "Vidéos et exercices", desc: "Vidéos et exercices ajoutés pour ta classe.", disponible: true, outilDirect: "videos" },
   { id: "collaboratif", icone: "👥", titre: "Apprentissage collaboratif", desc: "Échange avec d'autres apprenants.", disponible: false },
 ];
 
@@ -595,7 +595,6 @@ function rendreGrilleNiveauxEtude() {
     <button type="button" class="carte-niveau-etude" data-niveau="${n.id}">
       <span class="niveau-etude-icone">${n.icone}</span>
       <span class="niveau-etude-titre">${n.id}</span>
-      <span class="niveau-etude-age">${n.age}</span>
     </button>
   `).join("");
   grilleNiveauxEtude.querySelectorAll(".carte-niveau-etude").forEach((carte) => {
@@ -707,6 +706,7 @@ function validerClasseEtPasserTechnique(classe) {
   document.getElementById("etude-bloc-choix-technique").hidden = false;
   document.getElementById("btn-retour-vers-techniques").hidden = true;
   document.getElementById("etude-outil-titre").hidden = true;
+  document.getElementById("ressources-manuelles").hidden = true;
   rendreGrilleTechniques();
 }
 
@@ -721,6 +721,9 @@ document.getElementById("btn-retour-vers-techniques").addEventListener("click", 
   document.getElementById("etude-bloc-choix-technique").hidden = false;
   document.getElementById("btn-retour-vers-techniques").hidden = true;
   document.getElementById("etude-outil-titre").hidden = true;
+  document.getElementById("ressources-manuelles").hidden = true;
+  etudeSujetFormulaire.hidden = true;
+  grilleTechniques.querySelectorAll(".carte-technique").forEach((c) => c.classList.remove("technique-selectionnee"));
 });
 
 function choisirNiveauEtude(niveau) {
@@ -770,6 +773,7 @@ function rendreGrilleTechniques() {
       const config = TECHNIQUES_ETUDE.find((t) => t.id === etudeTechniqueChoisie);
 
       if (config && config.outilDirect) {
+        // Chaque technique ouvre sa propre page dediee
         document.getElementById("etude-bloc-choix-technique").hidden = true;
         etudeSujetFormulaire.hidden = true;
 
@@ -778,17 +782,26 @@ function rendreGrilleTechniques() {
         titreOutil.textContent = `${config.icone} ${config.titre}`;
         document.getElementById("btn-retour-vers-techniques").hidden = false;
 
-        document.querySelectorAll(".onglet-ressource").forEach((o) => o.classList.toggle("actif", o.dataset.onglet === config.outilDirect));
+        document.getElementById("ressources-manuelles").hidden = false;
+        const panneauxParTechnique = { videos: ["videos", "exercices"], fiches: ["fiches"], maitrise: ["maitrise"], planning: ["planning"], devoirs: ["devoirs"] };
+        const aAfficher = panneauxParTechnique[config.outilDirect] || [config.outilDirect];
         ongletRessourceActif = config.outilDirect;
         ["videos", "exercices", "fiches", "maitrise", "planning", "devoirs"].forEach((id) => {
-          document.getElementById(`panneau-${id}`).hidden = ongletRessourceActif !== id;
+          document.getElementById(`panneau-${id}`).hidden = !aAfficher.includes(id);
         });
-        if (ongletRessourceActif === "fiches") chargerFichesAReviser();
-        if (ongletRessourceActif === "maitrise") chargerMaitrise();
-        if (ongletRessourceActif === "devoirs") chargerDevoirsEleve();
+        if (aAfficher.includes("fiches")) chargerFichesAReviser();
+        if (aAfficher.includes("maitrise")) chargerMaitrise();
+        if (aAfficher.includes("devoirs")) chargerDevoirsEleve();
+        if (aAfficher.includes("videos")) { chargerVideos(); chargerExercicesPersonnalises(); }
         return;
       }
 
+      document.getElementById("etude-bloc-choix-technique").hidden = true;
+      document.getElementById("ressources-manuelles").hidden = true;
+      const titreIA = document.getElementById("etude-outil-titre");
+      titreIA.hidden = false;
+      titreIA.textContent = `${config.icone} ${config.titre}`;
+      document.getElementById("btn-retour-vers-techniques").hidden = false;
       etudeSujetFormulaire.hidden = false;
       etudeMatiereV2.focus();
     });
@@ -840,20 +853,6 @@ async function chargerExercicesPersonnalises() {
 }
 
 ressourceMatiere.addEventListener("change", () => { chargerVideos(); chargerExercicesPersonnalises(); });
-
-document.querySelectorAll(".onglet-ressource").forEach((onglet) => {
-  onglet.addEventListener("click", () => {
-    document.querySelectorAll(".onglet-ressource").forEach((o) => o.classList.remove("actif"));
-    onglet.classList.add("actif");
-    ongletRessourceActif = onglet.dataset.onglet;
-    ["videos", "exercices", "fiches", "maitrise", "planning", "devoirs"].forEach((id) => {
-      document.getElementById(`panneau-${id}`).hidden = ongletRessourceActif !== id;
-    });
-    if (ongletRessourceActif === "fiches") chargerFichesAReviser();
-    if (ongletRessourceActif === "maitrise") chargerMaitrise();
-    if (ongletRessourceActif === "devoirs") chargerDevoirsEleve();
-  });
-});
 
 document.getElementById("btn-ouvrir-form-video").addEventListener("click", () => {
   document.getElementById("formulaire-video").hidden = false;

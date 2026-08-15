@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "com.inousai.app",
+        "sha256_cert_fingerprints": ["3C:D7:A9:D9:44:7C:23:E4:1F:F7:84:7A:FF:6D:27:E2:14:45:CE:05:A5:CB:50:04:9D:25:DF:6E:7C:94:47:43"]
+      }
+    }]
