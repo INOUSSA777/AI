@@ -783,6 +783,7 @@ function rendreGrilleTechniques() {
         document.getElementById("btn-retour-vers-techniques").hidden = false;
 
         document.getElementById("ressources-manuelles").hidden = false;
+        if (typeof afficherPucesMatieres === "function") afficherPucesMatieres("puces-matieres-ressource", document.getElementById("ressource-matiere"), classeChoisie);
         const panneauxParTechnique = { videos: ["videos", "exercices"], fiches: ["fiches"], maitrise: ["maitrise"], planning: ["planning"], devoirs: ["devoirs"] };
         const aAfficher = panneauxParTechnique[config.outilDirect] || [config.outilDirect];
         ongletRessourceActif = config.outilDirect;
@@ -804,6 +805,7 @@ function rendreGrilleTechniques() {
       document.getElementById("btn-retour-vers-techniques").hidden = false;
       etudeSujetFormulaire.hidden = false;
       if (typeof remplirMatieresDatalist === "function") remplirMatieresDatalist(classeChoisie);
+      if (typeof afficherPucesMatieres === "function") afficherPucesMatieres("puces-matieres-etude", etudeMatiereV2, classeChoisie);
       etudeMatiereV2.focus();
     });
   });

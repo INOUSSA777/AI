@@ -101,3 +101,21 @@ function remplirMatieresDatalist(classe) {
   const liste = MATIERES_PAR_CLASSE[classe] || [];
   dl.innerHTML = liste.map((mat) => `<option value="${mat}"></option>`).join("");
 }
+
+// Affiche les matières de la classe sous forme de puces cliquables
+function afficherPucesMatieres(containerId, input, classe) {
+  const box = document.getElementById(containerId);
+  if (!box) return;
+  const liste = MATIERES_PAR_CLASSE[classe] || [];
+  if (!liste.length) { box.innerHTML = ""; box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = '<span class="puces-matieres-titre">Matières de la classe — choisis-en une :</span>' +
+    liste.map((mat) => `<button type="button" class="puce-matiere">${mat}</button>`).join("");
+  box.querySelectorAll(".puce-matiere").forEach((b) => {
+    b.addEventListener("click", () => {
+      if (input) { input.value = b.textContent; input.dispatchEvent(new Event("change")); }
+      box.querySelectorAll(".puce-matiere").forEach((x) => x.classList.remove("actif"));
+      b.classList.add("actif");
+    });
+  });
+}
