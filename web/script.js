@@ -803,6 +803,7 @@ function rendreGrilleTechniques() {
       titreIA.textContent = `${config.icone} ${config.titre}`;
       document.getElementById("btn-retour-vers-techniques").hidden = false;
       etudeSujetFormulaire.hidden = false;
+      if (typeof remplirMatieresDatalist === "function") remplirMatieresDatalist(classeChoisie);
       etudeMatiereV2.focus();
     });
   });
@@ -1225,9 +1226,9 @@ async function chargerEtape(etape, instructionSupplementaire) {
   if (etape === "cours") {
     prompt = `Fais un cours clair sur "${sujet}" (${base}). Structure : une définition précise, puis les points clés. ` +
       `Utilise du LaTeX entre symboles $ pour toute formule mathématique s'il y en a. Reste concis (une leçon, pas un livre). ` +
-      (instructionSupplementaire || "") + contextePdf;
+      (instructionSupplementaire || "") + (typeof instructionPedagogique === "function" ? instructionPedagogique(etudeContexte.matiere, etudeContexte.parcours) : "") + contextePdf;
   } else if (etape === "exemple") {
-    prompt = `Donne un exemple concret entièrement résolu, étape par étape, sur "${sujet}" (${base}). Utilise du LaTeX entre $ pour les formules.` + contextePdf;
+    prompt = `Donne un exemple concret entièrement résolu, étape par étape, sur "${sujet}" (${base}). Utilise du LaTeX entre $ pour les formules.` + (typeof instructionPedagogique === "function" ? instructionPedagogique(etudeContexte.matiere, etudeContexte.parcours) : "") + contextePdf;
   } else if (etape === "exercices") {
     prompt = `Propose exactement 4 exercices d'entraînement sur "${sujet}" (${base}), de difficulté progressive. ` +
       `Réponds UNIQUEMENT avec un tableau JSON valide, sans texte autour, au format : ` +

@@ -206,7 +206,8 @@
         <div class="etude-sujet-formulaire" id="etude-sujet-formulaire" hidden>
           <div class="etude-champ">
             <label>Matière</label>
-            <input type="text" id="etude-matiere-v2" placeholder="Ex : Mathématiques, Français…">
+            <input type="text" id="etude-matiere-v2" list="liste-matieres" placeholder="Ex : Mathématiques, Français…">
+            <datalist id="liste-matieres"></datalist>
           </div>
           <div class="etude-champ">
             <label>Sujet précis</label>
@@ -699,6 +700,7 @@
   </div>
 </div>
 
+<script src="programme_primaire.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
