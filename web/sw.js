@@ -1,8 +1,8 @@
-// Service worker : mise en cache basique de l'appli + réception des vraies
-// notifications push (rappels de révision envoyés par le serveur).
+// Service worker : cache de l'appli (RESEAU D'ABORD pour toujours avoir la
+// derniere version) + reception des vraies notifications push.
 
-const NOM_CACHE = "inous-ai-v1";
-const FICHIERS_ESSENTIELS = ["/", "/index.html", "/style.css", "/script.js"];
+const NOM_CACHE = "ino-education-v3";
+const FICHIERS_ESSENTIELS = ["/", "/index.html", "/style.css", "/script.js", "/programme_primaire.js"];
 
 self.addEventListener("install", (evenement) => {
   evenement.waitUntil(caches.open(NOM_CACHE).then((cache) => cache.addAll(FICHIERS_ESSENTIELS)));
@@ -16,18 +16,26 @@ self.addEventListener("activate", (evenement) => {
   self.clients.claim();
 });
 
+// Reseau d'abord : on interroge le serveur (toujours a jour), on met en cache
+// pour le hors-ligne, et on retombe sur le cache uniquement sans reseau.
 self.addEventListener("fetch", (evenement) => {
-  if (evenement.request.method !== "GET" || evenement.request.url.includes("/api/")) return;
+  const req = evenement.request;
+  if (req.method !== "GET" || req.url.includes("/api/")) return;
   evenement.respondWith(
-    caches.match(evenement.request).then((r) => r || fetch(evenement.request).catch(() => caches.match("/index.html")))
+    fetch(req)
+      .then((reponse) => {
+        const copie = reponse.clone();
+        caches.open(NOM_CACHE).then((cache) => cache.put(req, copie)).catch(() => {});
+        return reponse;
+      })
+      .catch(() => caches.match(req).then((r) => r || caches.match("/index.html")))
   );
 });
 
 // ---------- vraies notifications push ----------
 self.addEventListener("push", (evenement) => {
   let donnees = { titre: "INO-Education", corps: "Tu as une notification." };
-  try { donnees = evenement.data.json(); } catch { /* garde les valeurs par défaut */ }
-
+  try { donnees = evenement.data.json(); } catch { /* valeurs par defaut */ }
   evenement.waitUntil(
     self.registration.showNotification(donnees.titre, {
       body: donnees.corps,
