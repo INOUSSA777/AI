@@ -639,6 +639,7 @@ const CLASSES_PAR_NIVEAU = {
 };
 
 let classeChoisie = null;
+let matiereChoisie = null;
 let pileClasseNavigation = [];
 
 function afficherEtapeClasse(rendreFn) {
@@ -698,17 +699,60 @@ function demarrerSelectionClasse(niveau) {
 
 function validerClasseEtPasserTechnique(classe) {
   classeChoisie = classe;
+  matiereChoisie = null;
   etudeEtapeClasse.hidden = true;
   etudeEtapeTechnique.hidden = false;
   etudeNiveauChoisiTitre.textContent = `${etudeNiveauChoisi} — ${classe}`;
   etudeSujetFormulaire.hidden = true;
   etudeTechniqueChoisie = null;
-  document.getElementById("etude-bloc-choix-technique").hidden = false;
   document.getElementById("btn-retour-vers-techniques").hidden = true;
   document.getElementById("etude-outil-titre").hidden = true;
   document.getElementById("ressources-manuelles").hidden = true;
+
+  const matieres = (typeof MATIERES_PAR_CLASSE !== "undefined" && MATIERES_PAR_CLASSE[classe]) || null;
+  if (matieres) {
+    document.getElementById("etude-bloc-choix-technique").hidden = true;
+    document.getElementById("etude-bloc-choix-matiere").hidden = false;
+    rendreGrilleMatieres(classe);
+  } else {
+    document.getElementById("etude-bloc-choix-matiere").hidden = true;
+    document.getElementById("etude-bloc-choix-technique").hidden = false;
+    document.getElementById("btn-retour-vers-matieres").hidden = true;
+    rendreGrilleTechniques();
+  }
+}
+
+function rendreGrilleMatieres(classe) {
+  const box = document.getElementById("grille-matieres");
+  const liste = (typeof MATIERES_PAR_CLASSE !== "undefined" && MATIERES_PAR_CLASSE[classe]) || [];
+  box.innerHTML = liste.map((mat) => `
+    <button type="button" class="carte-matiere" data-matiere="${mat}">
+      <span class="carte-matiere-icone">${typeof iconeMatiere === "function" ? iconeMatiere(mat) : "📚"}</span>
+      <span class="carte-matiere-nom">${mat}</span>
+    </button>
+  `).join("");
+  box.querySelectorAll(".carte-matiere").forEach((c) => {
+    c.addEventListener("click", () => choisirMatiereEtPasserTechnique(c.dataset.matiere));
+  });
+}
+
+function choisirMatiereEtPasserTechnique(matiere) {
+  matiereChoisie = matiere;
+  document.getElementById("etude-bloc-choix-matiere").hidden = true;
+  document.getElementById("etude-bloc-choix-technique").hidden = false;
+  document.getElementById("btn-retour-vers-matieres").hidden = false;
+  etudeNiveauChoisiTitre.textContent = `${etudeNiveauChoisi} — ${classeChoisie} › ${matiere}`;
+  if (typeof etudeMatiereV2 !== "undefined" && etudeMatiereV2) etudeMatiereV2.value = matiere;
+  const rm = document.getElementById("ressource-matiere");
+  if (rm) rm.value = matiere;
   rendreGrilleTechniques();
 }
+
+document.getElementById("btn-retour-vers-matieres").addEventListener("click", () => {
+  document.getElementById("etude-bloc-choix-technique").hidden = true;
+  document.getElementById("etude-bloc-choix-matiere").hidden = false;
+  etudeNiveauChoisiTitre.textContent = `${etudeNiveauChoisi} — ${classeChoisie}`;
+});
 
 document.getElementById("btn-retour-classe-niveau").addEventListener("click", () => {
   pileClasseNavigation = [];
@@ -783,7 +827,6 @@ function rendreGrilleTechniques() {
         document.getElementById("btn-retour-vers-techniques").hidden = false;
 
         document.getElementById("ressources-manuelles").hidden = false;
-        if (typeof afficherPucesMatieres === "function") afficherPucesMatieres("puces-matieres-ressource", document.getElementById("ressource-matiere"), classeChoisie);
         const panneauxParTechnique = { videos: ["videos", "exercices"], fiches: ["fiches"], maitrise: ["maitrise"], planning: ["planning"], devoirs: ["devoirs"] };
         const aAfficher = panneauxParTechnique[config.outilDirect] || [config.outilDirect];
         ongletRessourceActif = config.outilDirect;
@@ -804,8 +847,6 @@ function rendreGrilleTechniques() {
       titreIA.textContent = `${config.icone} ${config.titre}`;
       document.getElementById("btn-retour-vers-techniques").hidden = false;
       etudeSujetFormulaire.hidden = false;
-      if (typeof remplirMatieresDatalist === "function") remplirMatieresDatalist(classeChoisie);
-      if (typeof afficherPucesMatieres === "function") afficherPucesMatieres("puces-matieres-etude", etudeMatiereV2, classeChoisie);
       etudeMatiereV2.focus();
     });
   });

@@ -119,3 +119,19 @@ function afficherPucesMatieres(containerId, input, classe) {
     });
   });
 }
+
+// Icône (emoji) par matière, pour les grandes cartes
+function iconeMatiere(matiere) {
+  const m = (matiere || "").toLowerCase();
+  const paires = [
+    [["lecture"], "📖"], [["écriture", "ecriture"], "✍️"], [["langage"], "🗣️"],
+    [["vocabulair"], "🔤"], [["grammair"], "📝"], [["conjug"], "🔗"], [["orthograph"], "✏️"],
+    [["expression écrite", "expression ecrite", "rédaction", "redaction"], "📄"],
+    [["math", "calcul"], "🔢"], [["scienc", "observ"], "🔬"], [["histoire"], "🏛️"],
+    [["géograph", "geograph"], "🗺️"], [["civique", "morale", "ecm"], "⚖️"],
+    [["eps", "sport"], "🤸"], [["dessin", "art"], "🎨"], [["chant", "musique"], "🎵"],
+    [["production", "pratique", "manuel", "jardin"], "🛠️"],
+  ];
+  for (const [mots, ico] of paires) { if (mots.some((k) => m.includes(k))) return ico; }
+  return "📚";
+}

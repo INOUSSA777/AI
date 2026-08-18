@@ -2590,3 +2590,10 @@ body.police-lisible, body.police-lisible input, body.police-lisible button { fon
 .puce-matiere { background: rgba(232,183,92,0.14); color: #e8b75c; border: 0.5px solid rgba(232,183,92,0.35); border-radius: 14px; padding: 5px 11px; font-size: 12.5px; cursor: pointer; }
 .puce-matiere:hover { background: rgba(232,183,92,0.24); }
 .puce-matiere.actif { background: #e8b75c; color: #16241d; font-weight: 600; }
+
+/* Grandes cartes de matières (étape "choisis une matière") */
+.grille-matieres { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; margin-top: 16px; }
+.carte-matiere { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: 150px; padding: 26px 16px; background: #1c3025; border: 1px solid rgba(242,239,226,0.12); border-radius: 18px; color: #f2efe2; cursor: pointer; transition: transform .12s ease, border-color .12s ease, background .12s ease; }
+.carte-matiere:hover { transform: translateY(-3px); border-color: #e8b75c; background: #21382b; }
+.carte-matiere-icone { font-size: 46px; line-height: 1; }
+.carte-matiere-nom { font-size: 18px; font-weight: 600; text-align: center; }
