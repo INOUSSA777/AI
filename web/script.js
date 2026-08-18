@@ -739,9 +739,17 @@ function rendreGrilleMatieres(classe) {
 function choisirMatiereEtPasserTechnique(matiere) {
   matiereChoisie = matiere;
   document.getElementById("etude-bloc-choix-matiere").hidden = true;
-  document.getElementById("etude-bloc-choix-technique").hidden = false;
   document.getElementById("btn-retour-vers-matieres").hidden = false;
   etudeNiveauChoisiTitre.textContent = `${etudeNiveauChoisi} — ${classeChoisie} › ${matiere}`;
+
+  const moduleLecture = document.getElementById("module-lecture");
+  if ((classeChoisie === "CP1" || classeChoisie === "CP2") && matiere === "Lecture" && typeof window.ouvrirModuleLecture === "function") {
+    document.getElementById("etude-bloc-choix-technique").hidden = true;
+    if (moduleLecture) { moduleLecture.hidden = false; window.ouvrirModuleLecture(classeChoisie, moduleLecture); }
+    return;
+  }
+  if (moduleLecture) moduleLecture.hidden = true;
+  document.getElementById("etude-bloc-choix-technique").hidden = false;
   if (typeof etudeMatiereV2 !== "undefined" && etudeMatiereV2) etudeMatiereV2.value = matiere;
   const rm = document.getElementById("ressource-matiere");
   if (rm) rm.value = matiere;
@@ -750,6 +758,7 @@ function choisirMatiereEtPasserTechnique(matiere) {
 
 document.getElementById("btn-retour-vers-matieres").addEventListener("click", () => {
   document.getElementById("etude-bloc-choix-technique").hidden = true;
+  const _ml = document.getElementById("module-lecture"); if (_ml) _ml.hidden = true;
   document.getElementById("etude-bloc-choix-matiere").hidden = false;
   etudeNiveauChoisiTitre.textContent = `${etudeNiveauChoisi} — ${classeChoisie}`;
 });
