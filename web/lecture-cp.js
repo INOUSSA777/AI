@@ -66,11 +66,13 @@
   // ---------- État / progression ----------
   let classeActuelle = "CP1";
   let conteneur = null;
+  let vueActuelle = "menu";
 
   function cleProg() { return "ino_lecture_prog_" + classeActuelle; }
   function lireProg() { try { return JSON.parse(localStorage.getItem(cleProg())) || {}; } catch (e) { return {}; } }
   function ecrireProg(p) { try { localStorage.setItem(cleProg(), JSON.stringify(p)); } catch (e) {} }
   function setProg(id, pct) { const p = lireProg(); p[id] = Math.max(p[id] || 0, Math.round(pct)); ecrireProg(p); }
+  function enregistrerScore(id, pct) { const p = lireProg(); p[id] = Math.round(pct); ecrireProg(p); }
   function etapeCourante() { const p = lireProg(); for (const e of ETAPES) { if ((p[e.id] || 0) < 100) return e; } return ETAPES[0]; }
 
   // ---------- Audio ----------
@@ -92,6 +94,7 @@
 
   // ---------- Rendu : accueil ----------
   function rendreAccueil() {
+    vueActuelle = "menu";
     const p = lireProg();
     const cont = etapeCourante();
     conteneur.innerHTML =
@@ -120,12 +123,11 @@
 
   // ---------- Cadre d'une étape ----------
   function cadre(etape, html) {
+    vueActuelle = "etape";
     conteneur.innerHTML =
-      '<button class="lec-retour" id="lec-retour">← Retour</button>' +
       '<h3 class="lec-titre-etape">' + etape.icone + ' ' + etape.titre + '</h3>' +
       '<div class="lec-zone">' + html + '</div>' +
       '<div class="lec-feedback" id="lec-feedback" hidden></div>';
-    conteneur.querySelector("#lec-retour").addEventListener("click", rendreAccueil);
   }
   function feedback(ok, msg) {
     const f = conteneur.querySelector("#lec-feedback");
@@ -134,10 +136,16 @@
     f.className = "lec-feedback " + (ok ? "ok" : "ko");
     f.textContent = msg;
   }
-  function cadreFin(etape) {
+  function cadreFin(etape, reussites, total) {
+    vueActuelle = "etape";
+    var ligne = "";
+    if (typeof total === "number" && total > 0) {
+      var pct = Math.round((reussites / total) * 100);
+      ligne = '<div class="lec-score">Tu as réussi <b>' + reussites + ' sur ' + total + '</b> (' + pct + '%).</div>';
+    }
     conteneur.innerHTML =
       '<div class="lec-fin"><div class="lec-fin-emoji">🏆</div>' +
-      '<h3>Bravo ! Étape « ' + etape.titre + ' » réussie.</h3>' +
+      '<h3>Étape « ' + etape.titre + ' » terminée !</h3>' + ligne +
       '<button class="lec-bouton-suite" id="lec-fin-retour">← Retour au menu</button></div>';
     conteneur.querySelector("#lec-fin-retour").addEventListener("click", rendreAccueil);
     parler("Bravo !");
@@ -145,9 +153,9 @@
 
   // ---------- Moteur générique : série de questions à choix ----------
   function lancerSerie(etape, items) {
-    let i = 0;
+    let i = 0, reussites = 0;
     function afficher() {
-      if (i >= items.length) { setProg(etape.id, 100); cadreFin(etape); return; }
+      if (i >= items.length) { enregistrerScore(etape.id, (reussites / items.length) * 100); cadreFin(etape, reussites, items.length); return; }
       const it = items[i];
       const petits = it.options.every((o) => String(o.label).length <= 2);
       cadre(etape,
@@ -162,17 +170,21 @@
         conteneur.querySelector("#lec-ecouter").addEventListener("click", () => parler(it.audioTexte));
         if (it.autoAudio) setTimeout(() => parler(it.audioTexte), 300);
       }
-      setProg(etape.id, (i / items.length) * 100);
       conteneur.querySelectorAll(".lec-opt").forEach((b) => b.addEventListener("click", () => {
         if (b.disabled) return;
+        const opts = conteneur.querySelectorAll(".lec-opt");
+        const bonIdx = it.options.findIndex((o) => o.correct);
+        opts.forEach((x) => (x.disabled = true));
         if (it.options[+b.dataset.i].correct) {
-          b.classList.add("bon");
-          conteneur.querySelectorAll(".lec-opt").forEach((x) => (x.disabled = true));
+          b.classList.add("bon"); reussites++;
           feedback(true, "⭐ Bravo !"); parler("Bravo");
           setTimeout(() => { i++; afficher(); }, 900);
         } else {
-          b.classList.add("mauvais"); b.disabled = true;
-          feedback(false, "😊 Essaie encore. Écoute bien.");
+          b.classList.add("mauvais");
+          if (opts[bonIdx]) opts[bonIdx].classList.add("bon");
+          feedback(false, "La bonne réponse est : " + it.options[bonIdx].label);
+          parler(it.options[bonIdx].label);
+          setTimeout(() => { i++; afficher(); }, 1600);
         }
       }));
     }
@@ -229,9 +241,9 @@
   }
   function etapeMots() {
     const mots = echantillon(MOTS, 6);
-    let i = 0;
+    let i = 0, reussites = 0;
     function afficher() {
-      if (i >= mots.length) { setProg("mots", 100); cadreFin(ETAPES[4]); return; }
+      if (i >= mots.length) { enregistrerScore("mots", (reussites / mots.length) * 100); cadreFin(ETAPES[4], reussites, mots.length); return; }
       const m = mots[i];
       cadre(ETAPES[4],
         '<div class="lec-consigne">Remets les syllabes dans l\'ordre :</div>' +
@@ -249,13 +261,14 @@
         choisis.push(b.dataset.s);
         slots.innerHTML = choisis.map((s) => '<span class="lec-slot">' + s + '</span>').join("");
         if (choisis.length === m.syllabes.length) {
+          conteneur.querySelectorAll(".lec-syl").forEach((x) => (x.disabled = true));
           if (choisis.join("") === m.syllabes.join("")) {
-            parler(m.mot); feedback(true, "⭐ " + m.mot + " !");
-            setProg("mots", ((i + 1) / mots.length) * 100);
+            parler(m.mot); feedback(true, "⭐ " + m.mot + " !"); reussites++;
             setTimeout(() => { i++; afficher(); }, 1100);
           } else {
-            feedback(false, "😊 Essaie encore.");
-            setTimeout(afficher, 1100);
+            slots.innerHTML = m.syllabes.map((s) => '<span class="lec-slot">' + s + '</span>').join("");
+            parler(m.mot); feedback(false, "La bonne réponse est : " + m.mot);
+            setTimeout(() => { i++; afficher(); }, 1700);
           }
         }
       }));
@@ -264,9 +277,9 @@
   }
   function etapeComprendre() {
     const t = echantillon(TEXTES, 1)[0];
-    let qi = 0;
+    let qi = 0, reussites = 0;
     function afficher() {
-      if (qi >= t.questions.length) { setProg("comprendre", 100); cadreFin(ETAPES[6]); return; }
+      if (qi >= t.questions.length) { enregistrerScore("comprendre", (reussites / t.questions.length) * 100); cadreFin(ETAPES[6], reussites, t.questions.length); return; }
       const q = t.questions[qi];
       cadre(ETAPES[6],
         '<div class="lec-texte">' + t.texte + '</div>' +
@@ -277,14 +290,19 @@
         '</div><div class="lec-avance">Question ' + (qi + 1) + ' / ' + t.questions.length + '</div>'
       );
       conteneur.querySelector("#lec-ecouter").addEventListener("click", () => parler(t.texte));
-      conteneur.querySelectorAll(".lec-opt").forEach((b) => b.addEventListener("click", () => {
+      const boutons = conteneur.querySelectorAll(".lec-opt");
+      boutons.forEach((b) => b.addEventListener("click", () => {
         if (b.disabled) return;
+        boutons.forEach((x) => (x.disabled = true));
         if (b.dataset.ok === "true") {
-          b.classList.add("bon"); feedback(true, "⭐ Bravo !");
-          conteneur.querySelectorAll(".lec-opt").forEach((x) => (x.disabled = true));
-          setProg("comprendre", ((qi + 1) / t.questions.length) * 100);
+          b.classList.add("bon"); feedback(true, "⭐ Bravo !"); reussites++;
           setTimeout(() => { qi++; afficher(); }, 1000);
-        } else { b.classList.add("mauvais"); b.disabled = true; feedback(false, "😊 Relis l'histoire."); }
+        } else {
+          b.classList.add("mauvais");
+          boutons.forEach((x) => { if (x.dataset.ok === "true") x.classList.add("bon"); });
+          feedback(false, "La bonne réponse est : " + q.options[q.bonne]);
+          setTimeout(() => { qi++; afficher(); }, 1700);
+        }
       }));
     }
     afficher();
@@ -342,9 +360,20 @@
       ".lec-bouton-suite{background:var(--la);color:#16241d;border:none;border-radius:12px;padding:12px 22px;font-weight:700;cursor:pointer;margin-top:8px;}",
       ".lec-fin{text-align:center;padding:24px;}",
       ".lec-fin-emoji{font-size:66px;}",
+      ".lec-score{font-size:18px;margin:10px 0 8px;}",
     ].join("");
     document.head.appendChild(s);
   }
+
+  // ---------- Accroche pour la flèche RETOUR globale ----------
+  window.lectureRetourDispo = function () {
+    var ml = document.getElementById("module-lecture");
+    return !!(ml && !ml.hidden);
+  };
+  window.lectureRetour = function () {
+    if (vueActuelle === "etape") { rendreAccueil(); }
+    else { var b = document.getElementById("btn-retour-vers-matieres"); if (b) b.click(); }
+  };
 
   // ---------- Point d'entrée public ----------
   window.ouvrirModuleLecture = function (classe, container) {
